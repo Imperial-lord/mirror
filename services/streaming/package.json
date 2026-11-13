@@ -1,0 +1,27 @@
+{
+  "name": "mirror-playback-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "dev:start": "node scripts/local-service.mjs start",
+    "dev:stop": "node scripts/local-service.mjs stop",
+    "dev:status": "node scripts/local-service.mjs status"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "cheerio": "^1.2.0",
+    "firebase-admin": "^14.5.0",
+    "webtorrent": "3.0.21"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
+}

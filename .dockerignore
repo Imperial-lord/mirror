@@ -1,0 +1,10 @@
+.git
+**/node_modules
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/.runtime
+apps
+packages
+docs

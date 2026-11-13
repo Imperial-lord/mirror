@@ -1,0 +1,12 @@
+node_modules
+.git
+.runtime
+.env
+.env.*
+!.env.example
+*.log
+*.pem
+*.key
+*service-account*.json
+*serviceAccount*.json
+credentials.json

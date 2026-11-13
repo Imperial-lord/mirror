@@ -1,0 +1,6 @@
+// Public defaults. Override on this machine in Local.xcconfig.
+PRODUCT_BUNDLE_IDENTIFIER = com.mirror.movies
+CODE_SIGN_STYLE = Automatic
+PLAYBACK_SERVICE_URL = http:/$()/127.0.0.1:8787
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.configure-locally
+#include? "Local.xcconfig"
