@@ -21,6 +21,11 @@ import SwiftUI
   var subtitleError: String?
   var failure: String?
   var ready = false
+  var hasReadyFrame = false
+  var seeking = false
+  var showsLoadingIndicator: Bool {
+    failure == nil && (loading || !hasReadyFrame || seeking || buffering)
+  }
   private var request: DesktopPlayback?
   private let source: any OfflineDownloadSource
   private let resumeProvider: @MainActor (Int) async -> (position: Double, updatedAt: Date)?
@@ -42,6 +47,7 @@ import SwiftUI
   private var tick: Any?
   private var cues: [SubtitleCue] = []
   private var generation = UUID()
+  private var seekGeneration = UUID()
   private var seekTarget: Double = 0
   private var lastSave = Date.distantPast
   private var sleepAssertion: IOPMAssertionID = 0
@@ -94,6 +100,9 @@ import SwiftUI
     source.close()
     player.pause()
     ready = false
+    hasReadyFrame = false
+    seeking = false
+    seekGeneration = UUID()
     loading = true
     failure = nil
     let token = UUID()
@@ -126,15 +135,20 @@ import SwiftUI
               self.loading = false
               let seconds = item.duration.seconds
               if seconds.isFinite, seconds > 0 { self.duration = seconds }
-              if self.seekTarget > 0 {
+              let initialSeekToken = UUID()
+              self.seekGeneration = initialSeekToken
+              // Decode a paused first frame too when autoplay is disabled.
+              if self.seekTarget > 0 || !self.wantsPlay {
                 let target = min(self.seekTarget, max(0, self.duration - 1))
                 self.seekTarget = 0
+                self.seeking = true
                 await self.player.seek(
                   to: CMTime(seconds: target, preferredTimescale: 600),
                   toleranceBefore: CMTime(seconds: 0.3, preferredTimescale: 600),
                   toleranceAfter: CMTime(seconds: 0.3, preferredTimescale: 600))
               }
-              guard self.generation == token else { return }
+              guard self.generation == token, self.seekGeneration == initialSeekToken else { return }
+              self.seeking = false
               if self.wantsPlay { self.player.playImmediately(atRate: self.rate) }
             }
           }
@@ -169,6 +183,10 @@ import SwiftUI
   }
   func seek(_ seconds: Double) {
     guard ready, seconds.isFinite else { return }
+    seeking = true
+    let seekToken = UUID()
+    seekGeneration = seekToken
+    let streamToken = generation
     position = min(max(0, seconds), max(0, duration - 0.2))
     player.seek(
       to: CMTime(seconds: position, preferredTimescale: 600),
@@ -176,7 +194,11 @@ import SwiftUI
       toleranceAfter: CMTime(seconds: 0.4, preferredTimescale: 600)
     ) { [weak self] finished in
       Task { @MainActor in
-        if let self, finished {
+        guard let self, self.seekGeneration == seekToken, self.generation == streamToken else {
+          return
+        }
+        self.seeking = false
+        if finished {
           if self.wantsPlay { self.player.playImmediately(atRate: self.rate) }
           self.save()
         }
@@ -261,6 +283,9 @@ import SwiftUI
   func stop() {
     save()
     generation = UUID()
+    seekGeneration = UUID()
+    seeking = false
+    hasReadyFrame = false
     prepareTask?.cancel()
     subtitleTask?.cancel()
     source.close()
@@ -294,15 +319,51 @@ private final class DesktopVideoNSView: NSView {
 }
 private struct DesktopVideoSurface: NSViewRepresentable {
   let player: AVPlayer
+  let onReadyForDisplay: (Bool) -> Void
+  final class Coordinator {
+    var onReadyForDisplay: (Bool) -> Void
+    var readiness: NSKeyValueObservation?
+    init(_ callback: @escaping (Bool) -> Void) { onReadyForDisplay = callback }
+  }
+  func makeCoordinator() -> Coordinator { Coordinator(onReadyForDisplay) }
   func makeNSView(context: Context) -> DesktopVideoNSView {
     let view = DesktopVideoNSView()
     view.video.player = player
     view.video.videoGravity = .resizeAspect
+    let coordinator = context.coordinator
+    coordinator.readiness = view.video.observe(\.isReadyForDisplay, options: [.initial, .new]) {
+      [weak coordinator] layer, _ in
+      Task { @MainActor in coordinator?.onReadyForDisplay(layer.isReadyForDisplay) }
+    }
     return view
   }
-  func updateNSView(_ view: DesktopVideoNSView, context: Context) { view.video.player = player }
-  static func dismantleNSView(_ view: DesktopVideoNSView, coordinator: ()) {
+  func updateNSView(_ view: DesktopVideoNSView, context: Context) {
+    context.coordinator.onReadyForDisplay = onReadyForDisplay
+    if view.video.player !== player { view.video.player = player }
+  }
+  static func dismantleNSView(_ view: DesktopVideoNSView, coordinator: Coordinator) {
+    coordinator.readiness?.invalidate()
     view.video.player = nil
+  }
+}
+
+/// Explicit white strokes stay visible over video in light, dark and system appearance.
+private struct DesktopPlaybackSpinner: View {
+  @State private var rotating = false
+  var body: some View {
+    ZStack {
+      ForEach(0..<12) { index in
+        Capsule().fill(.white.opacity(0.2 + Double(index) / 15))
+          .frame(width: 3, height: 9).offset(y: -14)
+          .rotationEffect(.degrees(Double(index) * 30))
+      }
+    }
+    .frame(width: 38, height: 38)
+    .rotationEffect(.degrees(rotating ? 360 : 0))
+    .onAppear {
+      withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) { rotating = true }
+    }
+    .accessibilityElement(children: .ignore).accessibilityLabel("Loading movie")
   }
 }
 
@@ -321,7 +382,7 @@ struct DesktopPlayerView: View {
   var body: some View {
     ZStack {
       Color.black
-      DesktopVideoSurface(player: model.player)
+      DesktopVideoSurface(player: model.player, onReadyForDisplay: { model.hasReadyFrame = $0 })
         .onTapGesture { if model.playing { controls.toggle() } else { reveal() } }
         .onContinuousHover { _ in reveal() }
       if !model.caption.isEmpty {
@@ -337,8 +398,13 @@ struct DesktopPlayerView: View {
             .frame(maxWidth: 850)
         }.padding(.bottom, controls ? 144 : 55).padding(.horizontal, 65).allowsHitTesting(false)
       }
-      if controls || model.loading || !model.playing || model.failure != nil {
+      if controls || model.showsLoadingIndicator || !model.playing || model.failure != nil {
         chrome.transition(.opacity)
+      }
+      if model.showsLoadingIndicator {
+        DesktopPlaybackSpinner()
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .allowsHitTesting(false)
       }
     }.foregroundStyle(.white).ignoresSafeArea().background(.black)
       .toolbar(.hidden, for: .windowToolbar)
@@ -379,6 +445,7 @@ struct DesktopPlayerView: View {
     }
       .onChange(of: model.playing) { _, _ in reveal() }
       .onChange(of: model.buffering) { _, _ in reveal() }
+      .onChange(of: model.showsLoadingIndicator) { _, _ in reveal() }
       .task {
         guard let request = session.playback else { return }
         model.checkpoint = { position, duration in
@@ -450,8 +517,8 @@ struct DesktopPlayerView: View {
               ).background(.white, in: Capsule())
             }.buttonStyle(.plain)
           }
-        } else if model.loading || model.buffering {
-          ProgressView().controlSize(.large).tint(.white).frame(height: 80)
+        } else if model.showsLoadingIndicator {
+          Color.clear.frame(height: 80)
         } else {
           HStack(spacing: 55) {
             playerButton(.backward10, "Back 10 seconds") {
@@ -472,7 +539,7 @@ struct DesktopPlayerView: View {
           }
         }
         Spacer()
-        if model.ready && model.failure == nil {
+        if model.ready && model.hasReadyFrame && model.failure == nil {
           VStack(spacing: 18) {
             HStack(spacing: 15) {
               Text(time(scrubbing ? scrubPosition : model.position)).monospacedDigit().frame(
@@ -576,10 +643,10 @@ struct DesktopPlayerView: View {
   private func reveal() {
     controls = true
     hideTask?.cancel()
-    guard model.playing, !model.buffering, !settings, !scrubbing else { return }
+    guard model.playing, !model.showsLoadingIndicator, !settings, !scrubbing else { return }
     hideTask = Task {
       try? await Task.sleep(for: .seconds(3))
-      if !Task.isCancelled, model.playing, !model.buffering, !settings, !scrubbing {
+      if !Task.isCancelled, model.playing, !model.showsLoadingIndicator, !settings, !scrubbing {
         withAnimation(.easeOut(duration: 0.2)) { controls = false }
       }
     }
