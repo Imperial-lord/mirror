@@ -21,6 +21,10 @@ final class DownloadStore: NSObject {
     private var authHandle: AuthStateDidChangeListenerHandle?
     private var runningID: Int?
     private var preparation: Task<Void, Never>?
+    private var processingAllowed = true
+    private var resumeProcessingIDs: Set<Int> = []
+    private var processingTask: Task<Void, Never>?
+    private let videoOptimizer: @MainActor (URL) async throws -> URL?
     private var networkTask: URLSessionDownloadTask?
     private var service: (any OfflineDownloadSource)?
     private var filesInUse: Set<URL> = []
@@ -36,7 +40,9 @@ final class DownloadStore: NSObject {
     init(storageDirectory: URL? = nil,
          accountProvider: @escaping () -> String? = { Auth.auth().currentUser?.uid },
          sourceFactory: @escaping @MainActor () -> any OfflineDownloadSource = { PlaybackService() },
-         transferConfiguration: (() -> URLSessionConfiguration)? = nil) {
+         transferConfiguration: (() -> URLSessionConfiguration)? = nil,
+         videoOptimizer: @escaping @MainActor (URL) async throws -> URL? = { try await OfflineVideoOptimizer.optimize($0) }) {
+        self.videoOptimizer = videoOptimizer
         self.storageDirectory = storageDirectory; self.accountProvider = accountProvider
         self.sourceFactory = sourceFactory; self.transferConfiguration = transferConfiguration
         super.init()
@@ -70,13 +76,14 @@ final class DownloadStore: NSObject {
     }
     func backgroundEvents(identifier: String, completion: @escaping () -> Void) {
         guard identifier == Self.sessionIdentifier else { completion(); return }
+        setProcessingActive(UIApplication.shared.applicationState != .background)
         backgroundCompletion = completion; start(); _ = session
     }
     func eventsFinished() {
         let completion = backgroundCompletion; backgroundCompletion = nil; completion?()
     }
     private func loadAccount(_ account: String?) {
-        stopRunning(); records = []; root = nil; uid = account; error = nil; restoring = true
+        stopRunning(); resumeProcessingIDs = []; records = []; root = nil; uid = account; error = nil; restoring = true
         guard let account else { restoring = false; return }
         do {
             let key = SHA256.hash(data: Data(account.utf8)).map { String(format: "%02x", $0) }.joined()
@@ -107,7 +114,7 @@ final class DownloadStore: NSObject {
                               let download = task as? URLSessionDownloadTask else { task.cancel(); continue }
                         self.runningID = record.id; self.networkTask = download; download.resume(); attached = true
                     }
-                    for index in self.records.indices where [.preparing, .downloading].contains(self.records[index].status) && self.records[index].id != self.runningID {
+                    for index in self.records.indices where [.preparing, .downloading, .processing].contains(self.records[index].status) && self.records[index].id != self.runningID {
                         self.records[index].status = .paused
                     }
                     do { try self.persist() } catch { self.error = "Couldn’t save download information." }
@@ -152,6 +159,18 @@ final class DownloadStore: NSObject {
         if !record.needsVideo { record.bytes = record.asset!.size; record.total = record.asset!.size }
         if let i = index(record.id) { records[i] = record } else { records.insert(record, at: 0) }
         try persist(); pump()
+    }
+    func setProcessingActive(_ active: Bool) {
+        processingAllowed = active
+        if !active, let id = runningID, let i = index(id), records[i].status == .processing {
+            pause(id); resumeProcessingIDs.insert(id)
+        } else if active {
+            let ids = resumeProcessingIDs
+            resumeProcessingIDs = []
+            for id in ids {
+                if let i = index(id), records[i].status == .paused { resume(id) }
+            }
+        }
     }
     func pause(_ id: Int) {
         guard let i = index(id) else { return }
@@ -220,6 +239,7 @@ final class DownloadStore: NSObject {
             var request = URLRequest(url: url.deletingLastPathComponent()); request.httpMethod = "DELETE"
             URLSession.shared.dataTask(with: request).resume()
         }
+        processingTask?.cancel(); processingTask = nil
         preparation?.cancel(); preparation = nil; networkTask?.cancel(); networkTask = nil
         service?.close(); service = nil; runningID = nil; liveBytes = 0
     }
@@ -350,6 +370,43 @@ final class DownloadStore: NSObject {
         } catch { fail(ticket, message: "Couldn’t finish saving this movie. Check free storage and retry.") }
     }
     private func finish(_ ticket: TransferTicket) {
+        guard let i = current(ticket), let asset = records[i].asset else { return }
+        guard asset.processingFinished != true else { markCompleted(ticket); return }
+        if !processingAllowed { pause(ticket.movieID); resumeProcessingIDs.insert(ticket.movieID); return }
+        // All source bytes are local now. Release OCI before starting the encoder.
+        service?.close(); service = nil
+        networkTask = nil
+        records[i].streamURL = nil
+        records[i].status = .processing
+        do { try persist() } catch { fail(ticket, message: "Couldn’t save download information."); return }
+        processingTask = Task { @MainActor in
+            var converted: URL?
+            defer { if let converted { try? FileManager.default.removeItem(at: converted) } }
+            do {
+                let folder = try directory(ticket.movieID)
+                let original = folder.appendingPathComponent(asset.file)
+                converted = try await videoOptimizer(original)
+                try Task.checkCancellation()
+                guard let i = current(ticket), records[i].asset?.file == asset.file else { return }
+                var replacement = asset
+                replacement.processingFinished = true
+                if let converted {
+                    let size = Int64(try converted.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
+                    guard size > 0, size < asset.size, converted != original,
+                          converted.deletingLastPathComponent() == folder else { throw OfflineVideoOptimizer.Failure.invalidVideo }
+                    replacement = .init(file: converted.lastPathComponent, quality: asset.quality,
+                                        hash: asset.hash, size: size, processingFinished: true)
+                }
+                records[i].asset = replacement
+                do { try persist() } catch { records[i].asset = asset; throw error }
+                if converted != nil { converted = nil; retireFile(original) }
+                markCompleted(ticket)
+            } catch is CancellationError { } catch {
+                fail(ticket, message: "Couldn’t process this download. Tap Retry to try again.")
+            }
+        }
+    }
+    private func markCompleted(_ ticket: TransferTicket) {
         guard let i = current(ticket) else { return }
         records[i].status = .completed; records[i].failure = nil
         stopRunning(); records[i].streamURL = nil; saveOrReport(); pump()

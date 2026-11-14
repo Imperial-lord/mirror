@@ -22,17 +22,21 @@ struct OfflineDownload: Codable, Identifiable {
     var streamURL: URL?
     var posterFile: String?
 
-    enum Status: String, Codable { case queued, preparing, downloading, paused, failed, completed }
+    enum Status: String, Codable { case queued, preparing, downloading, processing, paused, failed, completed }
     struct Asset: Codable {
         let file: String
         let quality: String
         let hash: String
         let size: Int64
+        var processingFinished: Bool? = nil
     }
     var needsVideo: Bool { asset?.hash != torrent.hash }
     var progress: Double { total > 0 ? min(1, max(0, Double(bytes) / Double(total))) : 0 }
     var quality: String { MovieQuality.label(torrent.quality) }
-    var size: String { total > 0 ? ByteCountFormatter.string(fromByteCount: total, countStyle: .file) : torrent.size }
+    var size: String {
+        let stored = status == .completed ? (asset?.size ?? total) : total
+        return stored > 0 ? ByteCountFormatter.string(fromByteCount: stored, countStyle: .file) : torrent.size
+    }
 }
 
 struct OfflineMovie: Identifiable {

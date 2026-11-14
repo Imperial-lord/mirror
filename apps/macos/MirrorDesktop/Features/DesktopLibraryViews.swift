@@ -382,6 +382,7 @@ struct DesktopDownloadsView: View {
               {
                 ProgressView(value: record.progress).tint(Color.mirrorInk).frame(maxWidth: 330)
               }
+              if record.status == .processing { ProgressView().controlSize(.small) }
               Text(status(record)).font(.caption).foregroundStyle(
                 record.status == .failed ? Color.mirrorRed : .mirrorTextSecondary)
               if !record.notices.isEmpty {
@@ -389,10 +390,10 @@ struct DesktopDownloadsView: View {
                   Color.mirrorTextTertiary)
               }
             }.frame(maxWidth: .infinity, alignment: .leading)
-            if record.asset != nil {
+            if record.asset != nil && record.status != .processing {
               DesktopAction(title: "Play", icon: .playBold) { play(record) }
             }
-            if [.downloading, .preparing, .queued].contains(record.status) {
+            if [.downloading, .preparing, .queued, .processing].contains(record.status) {
               DesktopIconButton(icon: .pauseLinear, help: "Pause download") {
                 store.pause(record.id)
               }
@@ -404,7 +405,7 @@ struct DesktopDownloadsView: View {
             }
             Menu {
               Button("Download settings") { settings = record.movie }
-              if record.asset != nil {
+              if record.asset != nil && record.status != .processing {
                 Button("Show in Finder") {
                   if let file = try? store.playback(record).file {
                     NSWorkspace.shared.activateFileViewerSelecting([file])
@@ -445,6 +446,7 @@ struct DesktopDownloadsView: View {
   private func status(_ record: OfflineDownload) -> String {
     switch record.status {
     case .queued: return "Waiting to download"
+    case .processing: return "Processing…"
     case .preparing: return "Preparing download…"
     case .downloading: return "Downloading \(Int(record.progress*100))%"
     case .paused: return "Paused · \(Int(record.progress*100))%"

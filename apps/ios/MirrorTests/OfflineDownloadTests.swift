@@ -44,7 +44,7 @@ final class OfflineDownloadTests: XCTestCase {
         defer { server.stop() }
         let source = FixtureDownloadSource(url: server.url)
         let storage = folder.appendingPathComponent("library")
-        let store = DownloadStore(storageDirectory: storage, accountProvider: { "download-test-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral })
+        let store = DownloadStore(storageDirectory: storage, accountProvider: { "download-test-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral }, videoOptimizer: { _ in nil })
         defer { store.shutdown() }
         let movie = try fixtureMovie()
         let hd = try fixtureTorrent(quality: "1080p", hash: String(repeating: "a", count: 40))
@@ -105,12 +105,12 @@ final class OfflineDownloadTests: XCTestCase {
         player.pause()
 
         // A new store reconstructs the device library and watch position from disk.
-        let restored = DownloadStore(storageDirectory: storage, accountProvider: { "download-test-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral })
+        let restored = DownloadStore(storageDirectory: storage, accountProvider: { "download-test-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral }, videoOptimizer: { _ in nil })
         restored.start(); defer { restored.shutdown() }
         try await until { restored.records.count == 1 }
         XCTAssertEqual(restored.records.first?.position, 1)
         XCTAssertEqual(restored.records.first?.asset?.quality, "720p")
-        let otherAccount = DownloadStore(storageDirectory: storage, accountProvider: { "different-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral })
+        let otherAccount = DownloadStore(storageDirectory: storage, accountProvider: { "different-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral }, videoOptimizer: { _ in nil })
         otherAccount.start(); defer { otherAccount.shutdown() }
         XCTAssertTrue(otherAccount.records.isEmpty)
         XCTAssertTrue(FileManager.default.fileExists(atPath: playback.file.path))
@@ -121,6 +121,148 @@ final class OfflineDownloadTests: XCTestCase {
         try restored.delete(movie.id)
         XCTAssertTrue(restored.records.isEmpty)
         XCTAssertFalse(FileManager.default.fileExists(atPath: playback.file.path))
+    }
+
+
+    func testBackgroundDownloadsAllResumeProcessingWhenAppReturns() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let clip = try await makeClip(in: folder)
+        let server = try DownloadFixtureServer(body: Data(contentsOf: clip), failOnceAt: nil)
+        try await server.start(); defer { server.stop() }
+        let source = FixtureDownloadSource(url: server.url)
+        let store = DownloadStore(storageDirectory: folder.appendingPathComponent("library"),
+            accountProvider: { "background-processing-test" }, sourceFactory: { source },
+            transferConfiguration: { .ephemeral }, videoOptimizer: { _ in nil })
+        defer { store.shutdown() }
+        store.setProcessingActive(false)
+        let first = try fixtureMovie()
+        let second = try JSONDecoder().decode(MovieDetail.self, from: Data(#"{"id":999990002,"url":"","imdb_code":"tt0000002","title":"Second clip","year":2026,"rating":0,"runtime":1}"#.utf8))
+        let torrent = try fixtureTorrent(quality: "720p", hash: String(repeating: "e", count: 40))
+        try store.enqueue(movie: first, torrent: torrent, languages: [])
+        try store.enqueue(movie: second, torrent: torrent, languages: [])
+        try await until { store.records.count == 2 && store.records.allSatisfy { $0.status == .paused } }
+        XCTAssertEqual(server.offsets.count, 2)
+        store.setProcessingActive(true)
+        try await until { store.records.allSatisfy { $0.status == .completed } }
+        XCTAssertTrue(store.records.allSatisfy { $0.asset?.processingFinished == true })
+        XCTAssertEqual(server.offsets.count, 2)
+    }
+
+    func testLegacyDownloadAssetDecodesWithoutProcessingMetadata() throws {
+        let data = Data(#"{"file":"original.mp4","quality":"1080p","hash":"abc","size":1024}"#.utf8)
+        let asset = try JSONDecoder().decode(OfflineDownload.Asset.self, from: data)
+        XCTAssertNil(asset.processingFinished)
+        XCTAssertEqual(asset.file, "original.mp4")
+    }
+
+    func testProcessingWaitsThenRetriesLocallyWithoutDownloadingAgain() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let clip = try await makeClip(in: folder)
+        var body = try Data(contentsOf: clip)
+        // Valid padding represents the larger original; the injected encoder returns the clip.
+        var length = UInt32(4096).bigEndian
+        withUnsafeBytes(of: &length) { body.append(contentsOf: $0) }
+        body.append(Data("free".utf8)); body.append(Data(repeating: 0, count: 4088))
+        let server = try DownloadFixtureServer(body: body, failOnceAt: nil)
+        try await server.start(); defer { server.stop() }
+        let source = FixtureDownloadSource(url: server.url)
+        var mayFinish = false
+        var shouldFail = true
+        var attempts = 0
+        let store = DownloadStore(storageDirectory: folder.appendingPathComponent("library"),
+            accountProvider: { "processing-test" }, sourceFactory: { source },
+            transferConfiguration: { .ephemeral }, videoOptimizer: { original in
+                attempts += 1
+                while !mayFinish { try await Task.sleep(for: .milliseconds(10)) }
+                if shouldFail { throw URLError(.cannotDecodeContentData) }
+                let result = original.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".mp4")
+                try FileManager.default.copyItem(at: clip, to: result)
+                return result
+            })
+        defer { store.shutdown() }
+        let movie = try fixtureMovie()
+        let torrent = try fixtureTorrent(quality: "1080p", hash: String(repeating: "c", count: 40))
+        try store.enqueue(movie: movie, torrent: torrent, languages: ["en"])
+        try await until { store.records.first?.status == .processing && attempts == 1 }
+        XCTAssertGreaterThan(source.closeCount, 0, "OCI must be released before conversion")
+        let original = try store.playback(XCTUnwrap(store.records.first)).file
+        XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertFalse(store.records.contains { $0.status == .completed })
+        mayFinish = true
+        try await until { store.records.first?.status == .failed }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertEqual(store.records.first?.asset?.processingFinished, nil)
+        store.updatePlayback(id: movie.id, position: 1, duration: 3)
+        server.stop() // Retrying must require only local files and already saved captions.
+        shouldFail = false; mayFinish = false
+        store.resume(movie.id)
+        try await until { store.records.first?.status == .processing && attempts == 2 }
+        mayFinish = true
+        try await until { store.records.first?.status == .completed }
+        let saved = try XCTUnwrap(store.records.first)
+        let playback = try store.playback(saved)
+        XCTAssertEqual(saved.asset?.processingFinished, true)
+        XCTAssertLessThan(try XCTUnwrap(saved.asset?.size), Int64(body.count))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertEqual(playback.position, 1)
+        XCTAssertEqual(Set(playback.subtitles.keys), ["en"])
+        XCTAssertEqual(try Data(contentsOf: playback.file), try Data(contentsOf: clip))
+        XCTAssertEqual(server.offsets.count, 1)
+    }
+
+    func testPausingOrDeletingProcessingNeverCommitsStaleResults() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let clip = try await makeClip(in: folder)
+        let server = try DownloadFixtureServer(body: Data(contentsOf: clip), failOnceAt: nil)
+        try await server.start(); defer { server.stop() }
+        let source = FixtureDownloadSource(url: server.url)
+        let store = DownloadStore(storageDirectory: folder.appendingPathComponent("library"),
+            accountProvider: { "cancel-processing-test" }, sourceFactory: { source },
+            transferConfiguration: { .ephemeral }, videoOptimizer: { _ in
+                try await Task.sleep(for: .seconds(30)); return nil
+            })
+        defer { store.shutdown() }
+        let movie = try fixtureMovie()
+        try store.enqueue(movie: movie, torrent: fixtureTorrent(quality: "720p", hash: String(repeating: "d", count: 40)), languages: [])
+        try await until { store.records.first?.status == .processing }
+        let original = try store.playback(XCTUnwrap(store.records.first)).file
+        store.setProcessingActive(false)
+        XCTAssertEqual(store.records.first?.status, .paused)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        store.setProcessingActive(true)
+        try await until { store.records.first?.status == .processing }
+        try store.delete(movie.id)
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(store.records.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: original.path))
+    }
+
+    func testRealLocalHEVCConversionRemainsPlayableAndSeekable() async throws {
+        guard OfflineVideoOptimizer.hardwareHEVCAvailable() else { throw XCTSkip("No hardware HEVC encoder on this device") }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let clip = try await makeClip(in: folder)
+        let handle = try FileHandle(forWritingTo: clip)
+        try handle.seekToEnd()
+        var length = UInt32(131072).bigEndian
+        try withUnsafeBytes(of: &length) { try handle.write(contentsOf: $0) }
+        try handle.write(contentsOf: Data("free".utf8)); try handle.write(contentsOf: Data(repeating: 0, count: 131064)); try handle.close()
+        let converted = try await OfflineVideoOptimizer.optimize(clip)
+        let file = try XCTUnwrap(converted)
+        let player = AVPlayer(url: file)
+        try await until { player.currentItem?.status == .readyToPlay }
+        let sought = await player.seek(to: CMTime(seconds: 1, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+        XCTAssertTrue(sought)
+        XCTAssertEqual(player.currentTime().seconds, 1, accuracy: 0.1)
+        player.pause()
+        XCTAssertTrue(FileManager.default.fileExists(atPath: clip.path), "Only the store may retire the original")
     }
 
     private func until(_ condition: () -> Bool) async throws {
@@ -162,9 +304,10 @@ final class OfflineDownloadTests: XCTestCase {
 @MainActor
 private final class FixtureDownloadSource: OfflineDownloadSource {
     let url: URL
+    var closeCount = 0
     init(url: URL) { self.url = url }
     func open(hash: String) async throws -> URL { url }
-    func close() {}
+    func close() { closeCount += 1 }
     func subtitles(imdb: String, language: String) async throws -> SubtitleTrack {
         SubtitleTrack(language: language, requestedLanguage: language, text: "1\n00:00:00,000 --> 00:00:02,000\nOffline caption \(language)\n")
     }

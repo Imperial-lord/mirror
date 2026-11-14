@@ -60,15 +60,17 @@ struct DownloadsLibraryContent: View {
             }
 
             Menu {
-                if let asset = record.asset {
+                if let asset = record.asset, record.status != .processing {
                     Button("Play downloaded \(MovieQuality.label(asset.quality))") { do { playbackRequestedAt = .now; playing = try store.playback(record) } catch { self.error = error.localizedDescription } }
                 }
-                if [.queued, .preparing, .downloading].contains(record.status) { Button("Pause") { store.pause(record.id) } }
+                if [.queued, .preparing, .downloading, .processing].contains(record.status) { Button("Pause") { store.pause(record.id) } }
                 if [.paused, .failed].contains(record.status) { Button(record.status == .failed ? "Retry" : "Resume") { store.resume(record.id) } }
                 Button("Download settings") { editing = record }
                 Button("Delete download", role: .destructive) { deleting = record }
             } label: {
-                if [.preparing, .downloading].contains(record.status) {
+                if record.status == .processing {
+                    ProgressView().tint(Color.mirrorInk).frame(width: 44, height: 44)
+                } else if [.preparing, .downloading].contains(record.status) {
                     ZStack {
                         Circle().stroke(Color.mirrorInk.opacity(0.15), lineWidth: 2)
                         Circle().trim(from: 0, to: progress(record)).stroke(Color.mirrorInk, lineWidth: 2).rotationEffect(.degrees(-90))
@@ -106,6 +108,7 @@ struct DownloadsLibraryContent: View {
     private func status(_ record: OfflineDownload) -> String {
         switch record.status {
         case .queued: return "Queued"
+        case .processing: return "Processing…"
         case .preparing: return "Preparing download…"
         case .downloading: return "Downloading \(Int(progress(record) * 100))%"
         case .paused: return "Paused • \(Int(record.progress * 100))%"
