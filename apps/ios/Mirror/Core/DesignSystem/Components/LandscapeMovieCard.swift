@@ -28,7 +28,7 @@ public struct LandscapeMovieCard: View {
     private var cardContent: some View {
             VStack(alignment: .leading, spacing: 6) {
                 // Landscape Artwork
-                LazyImage(url: movie.backdropURL ?? movie.posterURL) { state in
+                LazyImage(url: movie.posterURL) { state in
                     if let image = state.image {
                         image
                             .resizable()
