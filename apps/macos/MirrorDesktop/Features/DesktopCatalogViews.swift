@@ -398,11 +398,11 @@ struct DesktopCollectionView: View {
   @State private var movies: [Movie] = []
   @State private var loading = true
   @State private var failure = false
-  @Environment(\.dismiss) private var dismiss
+  @Environment(DesktopSession.self) private var session
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
-        DesktopIconButton(icon: .arrowLeft, help: "Back") { dismiss() }
+        DesktopIconButton(icon: .arrowLeft, help: "Back") { session.goBack() }
         DesktopPageHeader(title: title)
         if loading {
           ProgressView().frame(maxWidth: .infinity, minHeight: 240)

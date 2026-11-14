@@ -49,6 +49,11 @@ struct DesktopPlayback: Identifiable {
     openingTask?.cancel()
     path.append(DesktopRoute.movie(id))
   }
+  func goBack() {
+    openingTask?.cancel()
+    guard !path.isEmpty else { return }
+    path.removeLast()
+  }
   func play(_ id: Int) {
     guard AuthService.shared.isAuthenticated else {
       showSignIn = true

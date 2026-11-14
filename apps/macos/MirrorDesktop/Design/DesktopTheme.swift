@@ -51,6 +51,7 @@ struct DesktopImage: View {
           image.resizable().aspectRatio(contentMode: cover ? .fill : .fit)
             .frame(width: box.size.width, height: box.size.height)
             .clipped()
+            .contentShape(Rectangle())
         } else {
           Color.mirrorSurface2.overlay {
             if state.isLoading {
@@ -63,6 +64,7 @@ struct DesktopImage: View {
       }
     }
     .clipped()
+    .contentShape(Rectangle())
     .accessibilityHidden(true)
   }
 }

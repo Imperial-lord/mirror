@@ -5,6 +5,27 @@ import XCTest
 
 final class DesktopPlaybackTests: XCTestCase {
   @MainActor
+  func testBackRestoresTheOriginatingSectionAndPopsOneScreenAtATime() {
+    for section in [DesktopSection.home, .catalog, .library] {
+      let session = DesktopSession()
+      session.navigate(section)
+      session.open(1)
+      let moviePath = session.path
+      session.path.append(DesktopRoute.collection("Filmography", [2, 3]))
+      let collectionPath = session.path
+      session.open(2)
+      session.goBack()
+      XCTAssertEqual(session.path, collectionPath)
+      session.goBack()
+      XCTAssertEqual(session.path, moviePath)
+      session.goBack()
+      XCTAssertTrue(session.path.isEmpty)
+      XCTAssertEqual(session.section, section)
+      session.goBack()
+      XCTAssertTrue(session.path.isEmpty, "Back at the root must be safe")
+    }
+  }
+  @MainActor
   func testLoadingRemainsVisibleUntilTheFirstVideoFrame() {
     let controller = DesktopPlayerController()
     XCTAssertTrue(controller.showsLoadingIndicator)

@@ -3,7 +3,6 @@ import SwiftUI
 
 struct DesktopMovieView: View {
   let movieID: Int
-  @Environment(\.dismiss) private var dismiss
   @Environment(DesktopSession.self) private var session
   @State private var model: MovieDetailViewModel
   @State private var save = false
@@ -16,7 +15,7 @@ struct DesktopMovieView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 30) {
-        DesktopIconButton(icon: .arrowLeft, help: "Back") { dismiss() }.padding(.top, 48)
+        DesktopIconButton(icon: .arrowLeft, help: "Back") { session.goBack() }.padding(.top, 48)
         switch model.state {
         case .idle, .loading: ProgressView().frame(maxWidth: .infinity, minHeight: 450)
         case .error(let message):
@@ -319,14 +318,14 @@ struct DesktopDownloadSheet: View {
 
 struct DesktopPersonView: View {
   let person: Cast
-  @Environment(\.dismiss) private var dismiss
+  @Environment(DesktopSession.self) private var session
   @State private var biography: PersonBiography?
   @State private var movies: [Movie] = []
   @State private var loading = true
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 30) {
-        DesktopIconButton(icon: .arrowLeft, help: "Back") { dismiss() }.padding(.top, 48)
+        DesktopIconButton(icon: .arrowLeft, help: "Back") { session.goBack() }.padding(.top, 48)
         HStack(alignment: .top, spacing: 38) {
           if person.avatarURL != nil {
             DesktopImage(url: person.avatarURL).frame(width: 270, height: 350).clipShape(
