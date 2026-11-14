@@ -12,7 +12,7 @@ Native SwiftUI/AppKit app for macOS 14+, with its own desktop UI and a separatel
 
 Firebase Authentication uses the macOS Data Protection keychain. The app must be signed with the checked-in entitlements; a development identity and matching provisioning profile are required for a normal local build. Xcode can manage these automatically. Do not remove keychain entitlements to bypass a signing error. CI uses ad-hoc signing without protected keychain entitlements and skips authentication integration tests; run the full signed local suite to verify authentication persistence.
 
-Credentials, Firebase client configuration, signing overrides, and generated app bundles remain ignored by Git. Public distribution signing, notarization, and automatic updates are not configured.
+Credentials, Firebase client configuration, signing overrides, and generated app bundles remain ignored by Git. Developer ID signing, notarization, and in-app automatic updates are not configured. The [macOS release workflow](../../docs/macos-releases.md) publishes versioned portable ZIPs after successful main CI.
 
 For experimental sharing without a paid Apple account, see [the opt-in portable build](../../docs/macos-adhoc.md). It uses a separate dependency copy with explicit login-Keychain compatibility changes. Simply removing entitlements from the normal build does not provide working authentication.
 
@@ -45,4 +45,4 @@ The native desktop UI lives only under `MirrorDesktop/`. Portable catalog/histor
 
 From the repository root, `bash scripts/test-macos.sh` runs the suite with only local Firebase emulators (`demo-mirror-auth`). The suite covers account/profile persistence, strict watch completion, account-scoped history, real HTTP video/seek behavior, download resume/replacement, saved subtitle choices and playback cleanup. Generated clips are local fixtures; tests do not fetch a public movie torrent or use production accounts.
 
-CI bootstraps dummy configuration with `python3 scripts/bootstrap-ios.py --ci --platform macos`. CI runs unit, HTTP playback, download and history tests plus a Release build without production credentials. Authentication integration tests run in the locally signed suite because GitHub runners do not have an Apple development identity. Distribution signing/notarization is separate from this local development build.
+CI bootstraps dummy configuration with `python3 scripts/bootstrap-ios.py --ci --platform macos`. CI runs unit, HTTP playback, download and history tests plus a Release build without production credentials. It also runs the full portable suite, including authentication/session persistence, with login Keychain and local Firebase emulators. The normal build's protected-Keychain authentication tests still require local development signing. Distribution signing/notarization is separate from this local development build.

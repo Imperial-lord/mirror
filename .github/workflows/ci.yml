@@ -25,6 +25,7 @@ jobs:
           GITLEAKS_ENABLE_COMMENTS: false
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
       - run: python3 scripts/check-repository.py
+      - run: python3 -m unittest discover -s scripts -p 'test_macos_release.py'
   server:
     name: Server tests
     runs-on: ubuntu-latest
@@ -102,16 +103,22 @@ jobs:
       - run: python3 scripts/bootstrap-ios.py --ci --platform macos
       - run: xcodegen generate --spec apps/macos/project.yml --project apps/macos
       - run: bash scripts/test-macos.sh > macos-tests.log 2>&1
+      - name: Portable macOS authentication and playback tests
+        run: bash scripts/build-macos-adhoc.sh test > macos-portable-tests.log 2>&1
       - name: Release macOS build
         run: xcodebuild -quiet -project apps/macos/MirrorDesktop.xcodeproj -scheme MirrorDesktop -configuration Release -destination 'platform=macOS' CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS= build
       - name: Print macOS test failures
         if: failure()
-        run: tail -150 macos-tests.log || true
+        run: |
+          tail -100 macos-tests.log || true
+          tail -100 macos-portable-tests.log || true
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: macos-test-logs
-          path: macos-tests.log
+          path: |
+            macos-tests.log
+            macos-portable-tests.log
           retention-days: 7
   promotion:
     name: Develop to main

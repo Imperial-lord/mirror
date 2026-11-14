@@ -1,6 +1,6 @@
 # Portable macOS build
 
-This opt-in build is for sharing Mirror directly with trusted friends. It supports macOS 14 or newer on Apple silicon and Intel. It is ad-hoc signed, without an Apple-verified publisher identity, notarization, a development provisioning profile, or a paid Apple account. Automatic releases and updates are not configured.
+This opt-in build is for sharing Mirror directly with trusted friends. It supports macOS 14 or newer on Apple silicon and Intel. It is ad-hoc signed, without an Apple-verified publisher identity, notarization, a development provisioning profile, or a paid Apple account. [GitHub Releases](macos-releases.md) automate packaging and versioning; installing updates remains manual.
 
 ## Build and test
 

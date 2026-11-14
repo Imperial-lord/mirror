@@ -26,6 +26,13 @@ args=(-project apps/macos/MirrorDesktop.xcodeproj -scheme MirrorDesktop
       -clonedSourcePackagesDirPath "$packages" -disableAutomaticPackageResolution -skipPackageUpdates
       CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS=
       PROVISIONING_PROFILE_SPECIFIER=)
+if [[ -n "${MIRROR_RELEASE_VERSION:-}${MIRROR_RELEASE_BUILD:-}" ]]; then
+  if [[ ! "${MIRROR_RELEASE_VERSION:-}" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] ||
+     [[ ! "${MIRROR_RELEASE_BUILD:-}" =~ ^[1-9][0-9]*$ ]]; then
+    echo 'Supply a valid MIRROR_RELEASE_VERSION and positive MIRROR_RELEASE_BUILD together.' >&2; exit 2
+  fi
+  args+=("MARKETING_VERSION=$MIRROR_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$MIRROR_RELEASE_BUILD")
+fi
 if [[ "$mode" == test ]]; then
   firebase emulators:exec --config infra/firebase/firebase.json --project demo-mirror-auth --only auth,firestore \
     "xcodebuild $(printf '%q ' "${args[@]}") -configuration Debug -parallel-testing-enabled NO test"
@@ -41,8 +48,8 @@ fi
 notices="$app/Contents/Resources/PortableBuildNotices"
 mkdir -p "$notices"
 cp "$output/keychain-patch-manifest.json" "$notices/"
-cp "$packages/checkouts/firebase-ios-sdk/LICENSE" "$notices/Firebase-LICENSE.txt"
-cp "$packages/checkouts/GoogleUtilities/LICENSE" "$notices/GoogleUtilities-LICENSE.txt"
+install -m 644 "$packages/checkouts/firebase-ios-sdk/LICENSE" "$notices/Firebase-LICENSE.txt"
+install -m 644 "$packages/checkouts/GoogleUtilities/LICENSE" "$notices/GoogleUtilities-LICENSE.txt"
 cat > "$notices/README.txt" <<'EOF'
 Mirror portable ad-hoc build
 
