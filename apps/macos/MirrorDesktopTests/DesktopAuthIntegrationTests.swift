@@ -6,12 +6,11 @@ import XCTest
 @testable import MirrorDesktop
 
 @MainActor final class DesktopAuthIntegrationTests: XCTestCase {
-  private func service() -> AuthService {
+  private func service(name: String = "MacTests-\(UUID().uuidString)") -> AuthService {
     let options = FirebaseOptions(
       googleAppID: "1:123456789:ios:1234567890abcdef", gcmSenderID: "123456789")
     options.apiKey = "emulator-api-key"
     options.projectID = "demo-mirror-auth"
-    let name = "MacTests-\(UUID().uuidString)"
     FirebaseApp.configure(name: name, options: options)
     let app = FirebaseApp.app(name: name)!
     let auth = Auth.auth(app: app)
@@ -23,6 +22,35 @@ import XCTest
     settings.cacheSettings = MemoryCacheSettings()
     db.settings = settings
     return AuthService(auth: auth, db: db)
+  }
+  func testSessionRestoresAfterFirebaseAppIsRecreated() async throws {
+    let name = "Persistence-\(UUID().uuidString)"
+    var initial: AuthService? = service(name: name)
+    let password = UUID().uuidString + "Aa1!"
+    try await initial?.signUp(
+      email: "restore-\(UUID().uuidString)@example.test", password: password, username: "Viewer")
+    let uid = try XCTUnwrap(initial?.currentUser?.uid)
+    let oldApp = try XCTUnwrap(FirebaseApp.app(name: name))
+    let oldAuth = Auth.auth(app: oldApp)
+    initial = nil
+    let deleted = await withCheckedContinuation { continuation in
+      oldApp.delete { continuation.resume(returning: $0) }
+    }
+    guard deleted else {
+      XCTFail("Could not dispose of the first Firebase app")
+      return
+    }
+
+    let restored = service(name: name)
+    defer { try? restored.signOut() }
+    let newApp = try XCTUnwrap(FirebaseApp.app(name: name))
+    XCTAssertFalse(oldAuth === Auth.auth(app: newApp))
+    for _ in 0..<60 {
+      if restored.currentUser?.uid == uid, restored.profiles.count == 2 { break }
+      try await Task.sleep(for: .milliseconds(50))
+    }
+    XCTAssertEqual(restored.currentUser?.uid, uid)
+    XCTAssertEqual(restored.profiles.count, 2)
   }
   func testDesktopSignInPersistsSessionAndProfiles() async throws {
     let service = service()

@@ -1,0 +1,130 @@
+name: Release macOS
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump (ignored when this commit is already released)
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+permissions:
+  contents: read
+concurrency:
+  group: macos-releases
+  cancel-in-progress: false
+jobs:
+  release:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify checked main commit and CI gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+          if [ "$EVENT" = workflow_dispatch ]; then
+            gh run list --workflow ci.yml --branch main --commit "$RELEASE_SHA" \
+              --event push --status success --json databaseId --jq 'length > 0' | grep -qx true
+          fi
+      - name: Plan version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          BUMP: ${{ inputs.bump || 'auto' }}
+        run: python3 scripts/macos-release-version.py --sha "$RELEASE_SHA" --bump "$BUMP"
+      - name: Already published
+        if: steps.version.outputs.skip == 'true'
+        run: echo 'This main commit already has a published macOS release; leaving its assets unchanged.'
+      - name: Install build tools
+        if: steps.version.outputs.skip != 'true'
+        run: brew install xcodegen
+      - name: Configure release client
+        if: steps.version.outputs.skip != 'true'
+        env:
+          MACOS_FIREBASE_CONFIG_B64: ${{ secrets.MACOS_FIREBASE_CONFIG_B64 }}
+          MACOS_PLAYBACK_SERVICE_URL: ${{ secrets.MACOS_PLAYBACK_SERVICE_URL }}
+        run: python3 scripts/configure-macos-release.py
+      - name: Generate Xcode project
+        if: steps.version.outputs.skip != 'true'
+        run: xcodegen generate --spec apps/macos/project.yml --project apps/macos
+      - name: Build universal portable app
+        if: steps.version.outputs.skip != 'true'
+        env:
+          MIRROR_RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          MIRROR_RELEASE_BUILD: ${{ github.run_number }}
+        run: bash scripts/build-macos-adhoc.sh build > macos-release.log 2>&1
+      - name: Verify version and prepare assets
+        if: steps.version.outputs.skip != 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_BUILD: ${{ github.run_number }}
+        run: |
+          python3 - <<'PY'
+          import os, plistlib
+          from pathlib import Path
+          info = plistlib.loads(Path('build/macos-adhoc/DerivedData/Build/Products/Release/Mirror.app/Contents/Info.plist').read_bytes())
+          assert info['CFBundleShortVersionString'] == os.environ['RELEASE_VERSION']
+          assert info['CFBundleVersion'] == os.environ['RELEASE_BUILD']
+          PY
+          cd build/macos-adhoc
+          mv Mirror-macOS-adhoc.zip "Mirror-macOS-$RELEASE_VERSION.zip"
+          shasum -a 256 "Mirror-macOS-$RELEASE_VERSION.zip" > SHA256SUMS
+      - name: Publish complete release
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          DRAFT_EXISTS: ${{ steps.version.outputs.draft_exists }}
+        run: |
+          cat > /tmp/mirror-release-notes.md <<'EOF'
+          Mirror for macOS 14 or newer — Apple silicon and Intel.
+
+          Download the ZIP, extract it and move Mirror.app to Applications. To update, quit Mirror and replace the app; keep your application data. Updates are manual.
+
+          This experimental build is ad-hoc signed and is not Apple-notarized. macOS may require System Settings → Privacy & Security → Open Anyway. No Apple Developer membership is needed to install it. Sign into your own Mirror account; playback requires an internet connection and service availability.
+
+          SHA256SUMS is provided to check the download. Release source, build procedure and Keychain compatibility details are in docs/macos-adhoc.md and docs/macos-releases.md.
+          EOF
+          if [ "$DRAFT_EXISTS" != true ]; then
+            gh release create "$RELEASE_TAG" --target "$RELEASE_SHA" --draft \
+              --title "Mirror for macOS $RELEASE_VERSION" --generate-notes \
+              --notes-file /tmp/mirror-release-notes.md
+          fi
+          gh release upload "$RELEASE_TAG" "build/macos-adhoc/Mirror-macOS-$RELEASE_VERSION.zip" \
+            build/macos-adhoc/SHA256SUMS --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest
+      - name: Print build failures
+        if: failure()
+        run: tail -100 macos-release.log || true
+      - name: Remove temporary client configuration
+        if: always()
+        run: rm -f apps/macos/Config/GoogleService-Info.plist apps/macos/Config/Local.xcconfig
