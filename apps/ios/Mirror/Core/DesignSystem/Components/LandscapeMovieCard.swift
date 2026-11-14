@@ -28,22 +28,15 @@ public struct LandscapeMovieCard: View {
     private var cardContent: some View {
             VStack(alignment: .leading, spacing: 6) {
                 // Landscape Artwork
-                LazyImage(url: movie.backdropURL ?? movie.posterURL) { state in
-                    if let image = state.image {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } else if state.isLoading {
-                        Rectangle()
-                            .fill(Color(mirrorHex: "18181B"))
-                            .shimmer()
+                LazyImage(url: movie.landscapeStillURL ?? movie.posterURL) { state in
+                    if state.error != nil, movie.landscapeStillURL != nil {
+                        // Older titles may have no still. Keep the card useful with a
+                        // full-size poster rather than returning to the blurred background.
+                        LazyImage(url: movie.posterURL) { posterState in
+                            artwork(posterState)
+                        }
                     } else {
-                        Rectangle()
-                            .fill(Color(mirrorHex: "18181B"))
-                            .overlay(
-                                PhosphorView(.film, size: 22)
-                                    .foregroundColor(Color.mirrorInk.opacity(0.3))
-                            )
+                        artwork(state)
                     }
                 }
                 .frame(width: width, height: 122)
@@ -74,5 +67,18 @@ public struct LandscapeMovieCard: View {
                 .frame(width: width, alignment: .leading)
             }
             .frame(width: width)
+    }
+
+    @ViewBuilder
+    private func artwork(_ state: any LazyImageState) -> some View {
+        if let image = state.image {
+            image.resizable().scaledToFill()
+        } else if state.isLoading {
+            Rectangle().fill(Color(mirrorHex: "18181B")).shimmer()
+        } else {
+            Rectangle().fill(Color(mirrorHex: "18181B"))
+                .overlay(PhosphorView(.film, size: 22)
+                    .foregroundColor(Color.mirrorInk.opacity(0.3)))
+        }
     }
 }

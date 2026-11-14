@@ -60,6 +60,16 @@ public struct Movie: Codable, Identifiable, Hashable {
         Self.sanitizeURL(backgroundImageOriginal ?? backgroundImage)
     }
 
+    /// YTS backgrounds are intentionally blurred, including `background_image_original`.
+    /// Its large movie stills are suitable for sharp, landscape cards instead.
+    public var landscapeStillURL: URL? {
+        guard let backdrop = backdropURL else { return nil }
+        guard ["img.yts.gg", "yts.gg", "yts.mx"].contains(backdrop.host?.lowercased() ?? ""),
+              backdrop.path.hasPrefix("/assets/images/movies/"),
+              backdrop.lastPathComponent == "background.jpg" else { return backdrop }
+        return backdrop.deletingLastPathComponent().appendingPathComponent("large-screenshot1.jpg")
+    }
+
     public var trailerURL: URL? {
         guard let code = ytTrailerCode, !code.isEmpty else { return nil }
         return URL(string: "https://www.youtube.com/watch?v=\(code)")
