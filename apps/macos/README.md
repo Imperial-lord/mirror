@@ -10,9 +10,11 @@ Native SwiftUI/AppKit app for macOS 14+, with its own desktop UI and a separatel
 4. Run `xcodegen generate --spec apps/macos/project.yml --project apps/macos` from the repository root.
 5. Open `apps/macos/MirrorDesktop.xcodeproj` and run the `MirrorDesktop` scheme.
 
-Firebase Authentication uses the macOS Data Protection keychain. The app must be signed with the checked-in entitlements; a development identity and matching provisioning profile are required for a normal local build. Xcode can manage these automatically. Do not remove keychain entitlements to bypass a signing error. CI uses ad-hoc signing without protected keychain entitlements and skips the two authentication integration tests; run the full signed local suite to verify authentication persistence.
+Firebase Authentication uses the macOS Data Protection keychain. The app must be signed with the checked-in entitlements; a development identity and matching provisioning profile are required for a normal local build. Xcode can manage these automatically. Do not remove keychain entitlements to bypass a signing error. CI uses ad-hoc signing without protected keychain entitlements and skips authentication integration tests; run the full signed local suite to verify authentication persistence.
 
 Credentials, Firebase client configuration, signing overrides, and generated app bundles remain ignored by Git. Public distribution signing, notarization, and automatic updates are not configured.
+
+For experimental sharing without a paid Apple account, see [the opt-in portable build](../../docs/macos-adhoc.md). It uses a separate dependency copy with explicit login-Keychain compatibility changes. Simply removing entitlements from the normal build does not provide working authentication.
 
 ## Features
 
