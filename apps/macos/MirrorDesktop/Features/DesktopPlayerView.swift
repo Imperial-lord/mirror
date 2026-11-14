@@ -12,6 +12,7 @@ import SwiftUI
   var position: Double = 0
   var duration: Double = 0
   var volume: Float = 1
+  private var volumeBeforeMute: Float = 1
   var rate: Float = 1
   var quality = "1080p"
   var subtitle = "off"
@@ -195,6 +196,10 @@ import SwiftUI
   func setVolume(_ value: Float) {
     volume = value
     player.volume = value
+    if value > 0 { volumeBeforeMute = value }
+  }
+  func toggleMute() {
+    setVolume(volume > 0 ? 0 : volumeBeforeMute)
   }
   func setSubtitle(_ code: String) {
     subtitleTask?.cancel()
@@ -309,6 +314,7 @@ struct DesktopPlayerView: View {
   @State private var settings = false
   @State private var hideTask: Task<Void, Never>?
   @State private var enteredFullscreen = false
+  @State private var isFullscreen = false
   @State private var scrubbing = false
   @State private var scrubPosition: Double = 0
   @State private var window: NSWindow?
@@ -359,6 +365,18 @@ struct DesktopPlayerView: View {
         reveal()
       }
       .onReceive(NotificationCenter.default.publisher(for: .mirrorFullscreen)) { _ in fullscreen() }
+      .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification))
+    { note in
+      if let changedWindow = note.object as? NSWindow, changedWindow === window {
+        isFullscreen = true
+      }
+    }
+      .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification))
+    { note in
+      if let changedWindow = note.object as? NSWindow, changedWindow === window {
+        isFullscreen = false
+      }
+    }
       .onChange(of: model.playing) { _, _ in reveal() }
       .onChange(of: model.buffering) { _, _ in reveal() }
       .task {
@@ -378,6 +396,7 @@ struct DesktopPlayerView: View {
         }
         model.start(request)
         window = NSApp.keyWindow ?? NSApp.windows.first
+        isFullscreen = window?.styleMask.contains(.fullScreen) == true
         window?.toolbar?.isVisible = false
         window?.titleVisibility = .hidden
         window?.titlebarAppearsTransparent = true
@@ -476,17 +495,26 @@ struct DesktopPlayerView: View {
               Text(time(model.duration)).monospacedDigit().frame(width: 65)
             }.font(.system(size: 12))
             HStack(spacing: 14) {
-              Text("Volume").font(.caption).foregroundStyle(.white.opacity(0.65))
+              playerButton(
+                model.volume == 0
+                  ? .speakerMuted : (model.volume < 0.5 ? .speakerLow : .speakerHigh),
+                model.volume == 0 ? "Unmute" : "Mute"
+              ) {
+                model.toggleMute()
+                reveal()
+              }
               Slider(
                 value: Binding(get: { Double(model.volume) }, set: { model.setVolume(Float($0)) }),
                 in: 0...1
-              ).frame(width: 100).tint(.white).help("Volume")
+              ).frame(width: 100).tint(.white).help("Volume").accessibilityLabel("Volume")
               Spacer()
               if model.actualSubtitle != "off" {
                 Text(SubtitleLanguage.name(model.actualSubtitle)).font(.caption).foregroundStyle(
                   .white.opacity(0.65))
               }
-              playerButton(.maximizeCircle, "Full screen · F", fullscreen)
+              playerButton(
+                isFullscreen ? .fullscreenExit : .fullscreenEnter,
+                isFullscreen ? "Exit full screen · F" : "Enter full screen · F", fullscreen)
             }
           }.padding(.horizontal, 45).padding(.bottom, 30)
         } else {
