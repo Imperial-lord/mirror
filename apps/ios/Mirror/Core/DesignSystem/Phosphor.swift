@@ -69,6 +69,7 @@ public enum PhosphorIcon: String, CaseIterable {
     case fullscreenExit
     case speakerHigh
     case speakerLow
+    case speakerNone
     case speakerMuted
     case moon
     case sun
@@ -138,6 +139,7 @@ public enum PhosphorIcon: String, CaseIterable {
         case .fullscreenEnter: return "Enter full screen"
         case .fullscreenExit: return "Exit full screen"
         case .speakerHigh, .speakerLow: return "Volume"
+        case .speakerNone: return "Muted"
         case .speakerMuted: return "Muted"
         case .moon: return "Dark mode"
         case .sun: return "Light mode"
@@ -220,8 +222,9 @@ public enum PhosphorIcon: String, CaseIterable {
         case .maximizeCircle: return "Phosphor/picture-in-picture"
         case .fullscreenEnter: return "Phosphor/corners-out"
         case .fullscreenExit: return "Phosphor/corners-in"
-        case .speakerHigh: return "Phosphor/speaker-high"
-        case .speakerLow: return "Phosphor/speaker-low"
+        case .speakerHigh: return "Phosphor/speaker-simple-high"
+        case .speakerLow: return "Phosphor/speaker-simple-low"
+        case .speakerNone: return "Phosphor/speaker-simple-none"
         case .speakerMuted: return "Phosphor/speaker-slash"
         case .moon: return "Phosphor/moon"
         case .sun: return "Phosphor/sun"

@@ -32,7 +32,7 @@ struct DesktopAuthView: View {
         }.opacity(0.5).clipped()
         LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom)
         VStack(alignment: .leading, spacing: 24) {
-          Text("mirror").font(.system(size: 52, weight: .bold)).kerning(-3)
+          DesktopWordmark(size: 52)
           Spacer()
           Text("Great stories.\nYour own space.").font(.system(size: 42, weight: .semibold))
             .tracking(-1.5)

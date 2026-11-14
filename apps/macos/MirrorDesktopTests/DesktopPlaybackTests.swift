@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 
 @testable import MirrorDesktop
@@ -45,6 +46,23 @@ final class DesktopPlaybackTests: XCTestCase {
     controller.setVolume(0)
     controller.toggleMute()
     XCTAssertEqual(controller.volume, 0.35)
+  }
+  @MainActor
+  func testVolumeIconFollowsSliderAndMuteChanges() {
+    let controller = DesktopPlayerController()
+    let cases: [(Float, PhosphorIcon)] = [
+      (0, .speakerNone), (0.01, .speakerLow), (0.5, .speakerLow),
+      (0.51, .speakerHigh), (1, .speakerHigh)
+    ]
+    for (volume, icon) in cases {
+      controller.setVolume(volume)
+      XCTAssertEqual(controller.volumeIcon, icon)
+      XCTAssertNotNil(NSImage(named: NSImage.Name(icon.assetName)), "Speaker asset must render in the Mac bundle")
+    }
+    controller.toggleMute()
+    XCTAssertEqual(controller.volumeIcon, .speakerNone)
+    controller.toggleMute()
+    XCTAssertEqual(controller.volumeIcon, .speakerHigh)
   }
   func testSubtitleParsingIgnoresMarkupAndPreservesTiming() {
     let cues = SubtitleParser.parse(

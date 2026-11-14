@@ -22,7 +22,7 @@ struct DesktopRootView: View {
         }
       } else {
         VStack(spacing: 14) {
-          Text("mirror").font(.system(size: 68, weight: .bold)).kerning(-4)
+          DesktopWordmark(size: 68)
           Text("A world of stories.").font(.callout).foregroundStyle(Color.mirrorTextSecondary)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
       }
@@ -93,7 +93,7 @@ struct DesktopRootView: View {
   }
   private var sidebar: some View {
     VStack(alignment: .leading, spacing: 0) {
-      Text("mirror").font(.system(size: 34, weight: .bold)).kerning(-2)
+      DesktopWordmark(size: 34)
         .padding(.top, 54).padding(.bottom, 45).padding(.leading, 28)
       Text("DISCOVER").font(.system(size: 10, weight: .semibold)).tracking(2)
         .foregroundStyle(Color.mirrorTextTertiary).padding(.leading, 28).padding(.bottom, 15)

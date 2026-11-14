@@ -33,10 +33,23 @@ struct DesktopLibraryView: View {
           DesktopAction(title: "Sign in", primary: true) { session.showSignIn = true }.frame(
             maxWidth: .infinity)
         } else {
-          Picker("Library", selection: $tab) {
-            Text("Recent").tag("Recent")
-            Text("Favorites").tag("Favorites")
-          }.pickerStyle(.segmented).frame(width: 270).onChange(of: tab) { _, _ in folder = nil }
+          HStack(spacing: 4) {
+            ForEach(["Recent", "Favorites"], id: \.self) { title in
+              Button {
+                tab = title
+                folder = nil
+              } label: {
+                Text(title).font(.system(size: 13, weight: .medium))
+                  .frame(maxWidth: .infinity).frame(height: 38)
+                  .foregroundStyle(tab == title ? Color.mirrorInk : .mirrorTextSecondary)
+                  .background(tab == title ? Color.mirrorSurface3 : .clear, in: Capsule())
+                  .contentShape(Capsule())
+              }.buttonStyle(.plain)
+                .accessibilityAddTraits(tab == title ? .isSelected : [])
+            }
+          }.padding(4).frame(width: 300)
+            .background(Color.mirrorSurface1, in: Capsule())
+            .accessibilityElement(children: .contain).accessibilityLabel("Library sections")
           if tab == "Recent" {
             recent
           } else if !store.loaded {
@@ -193,10 +206,10 @@ struct DesktopLibraryView: View {
         alignment: .leading, spacing: 23
       ) {
         ForEach(store.playlists) { list in
-          Button {
-            folder = list.id
-          } label: {
-            VStack(alignment: .leading, spacing: 10) {
+          VStack(alignment: .leading, spacing: 10) {
+            Button {
+              folder = list.id
+            } label: {
               ZStack {
                 Color.mirrorSurface2
                 if let first = store.movies(playlistID: list.id).first {
@@ -204,25 +217,34 @@ struct DesktopLibraryView: View {
                 }
                 PhosphorView(.folder, size: 43, color: .mirrorInk.opacity(0.7))
               }.frame(height: 138).clipShape(RoundedRectangle(cornerRadius: 15))
-              HStack {
-                Text(list.name).font(.system(size: 14, weight: .medium))
-                Spacer()
+            }.buttonStyle(.plain).accessibilityLabel("Open \(list.name)")
+            HStack {
+              Button(list.name) { folder = list.id }
+                .font(.system(size: 14, weight: .medium)).buttonStyle(.plain)
+              Spacer()
+              Menu {
+                playlistActions(list)
+              } label: {
                 PhosphorView(.more, size: 15)
-              }
-              Text("\(list.movieIds.count) movies").font(.caption).foregroundStyle(
-                Color.mirrorTextTertiary)
+              }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .help("Manage \(list.name)").accessibilityLabel("Manage \(list.name)")
             }
-          }.buttonStyle(.plain).contextMenu {
-            Button("Edit movies") { editList = list }
-            Button("Rename") {
-              name = list.name
-              renameList = list
-            }
-            Button("Delete playlist", role: .destructive) { deleteList = list }
+            Text("\(list.movieIds.count) \(list.movieIds.count == 1 ? "movie" : "movies")")
+              .font(.caption).foregroundStyle(Color.mirrorTextTertiary)
+          }.contextMenu {
+            playlistActions(list)
           }
         }
       }
     }
+  }
+  @ViewBuilder private func playlistActions(_ list: LibraryPlaylist) -> some View {
+    Button("Edit movies") { editList = list }
+    Button("Rename") {
+      name = list.name
+      renameList = list
+    }
+    Button("Delete playlist", role: .destructive) { deleteList = list }
   }
   private func folderContent(_ id: String) -> some View {
     let list = store.playlists.first { $0.id == id }
