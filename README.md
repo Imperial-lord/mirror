@@ -1,13 +1,13 @@
 # Mirror
 
-A SwiftUI iOS movie app with a separately deployed Node streaming service.
+Native SwiftUI iOS and macOS movie apps with a separately deployed Node streaming service.
 Design reference: [Mirror by Sasha Dobrynina](https://www.behance.net/gallery/211500071/Online-Cinema-App-Mirror).
 
 ## Layout
 
 ```
 apps/ios/             iOS app, Xcode project, configuration and tests
-apps/macos/           home for a future macOS app and its own UI/tests
+apps/macos/           native macOS app, desktop UI, Xcode project and tests
 services/streaming/   independently deployable Node/WebTorrent service
 packages/             standalone packages (legacy SwiftTorrent is not linked)
 infra/firebase/       Firestore rules, indexes and emulator configuration
@@ -35,6 +35,10 @@ Dummy configuration supports builds/tests, not production sign-in.
 Optional Debug-only demo autofill reads `MIRROR_DEMO_EMAIL` and `MIRROR_DEMO_PASSWORD` from the
 Xcode scheme environment. Never save them in a shared scheme.
 
+## macOS setup
+
+See [Mirror for macOS](apps/macos/README.md) for local configuration, signing, desktop features and keyboard shortcuts. Open `apps/macos/MirrorDesktop.xcodeproj` and run the `MirrorDesktop` scheme. The Mac app uses the same Firebase data and OCI streaming service.
+
 ## Streaming service
 
 ```
@@ -60,7 +64,7 @@ bash scripts/test-ios.sh
 
 Local iOS tests default to the existing iPhone 17. Set `IOS_DESTINATION` to an explicit simulator
 ID if needed. Auth/profile integration tests use only the `demo-mirror-auth` emulators.
-CI builds iOS in Debug and Release and runs all active iOS tests, server tests, a Docker build and secret/repository checks.
+CI builds iOS and macOS in Debug and Release and runs all active client tests, server tests, a Docker build and secret/repository checks.
 The old in-app torrent adapter tests are excluded because the shipping app uses the server.
 
 ## Branches and releases
@@ -68,7 +72,7 @@ The old in-app torrent adapter tests are excluded because the shipping app uses 
 - `develop`: normal integration branch; create feature/fix branches from it and target PRs here.
 - `main`: stable branch; promote with a `develop` → `main` pull request after testing.
 
-`main` requires the Security, Server tests, iOS build and tests, and Develop to main checks,
+`main` requires the Security, Server tests, iOS build and tests, macOS build and tests, and Develop to main checks,
 an up-to-date branch, resolved conversations and a pull request. Force pushes/deletions and admin
 bypasses are disabled. No second-person approval is required for this single-maintainer project.
 Merge commits preserve the develop/main history; after a promotion, merge `main` back into `develop`.
