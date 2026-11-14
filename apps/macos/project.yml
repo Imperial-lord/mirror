@@ -5,6 +5,9 @@ options:
     macOS: '14.0'
   createIntermediateGroups: true
 packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle.git
+    exactVersion: 2.10.1
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS.git
     from: 8.0.0
@@ -56,6 +59,8 @@ targets:
       Debug: Config/Base.xcconfig
       Release: Config/Base.xcconfig
     dependencies:
+      - package: Sparkle
+        product: Sparkle
       - package: GoogleSignIn
         product: GoogleSignIn
       - package: Firebase

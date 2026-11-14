@@ -11,6 +11,15 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [security, server, ios, macos, promotion]
+    uses: ./.github/workflows/release-macos.yml
+    permissions:
+      contents: write
+      actions: read
+      pull-requests: read
+    secrets: inherit
   security:
     name: Security
     runs-on: ubuntu-latest

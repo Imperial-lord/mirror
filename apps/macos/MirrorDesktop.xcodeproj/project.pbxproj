@@ -11,7 +11,9 @@
 		009EDF5B44AAA1D8454F5D55 /* MirrorDesktopApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BE45CD4B0321AB2C7830D6 /* MirrorDesktopApp.swift */; };
 		0142C6B032ECB083501B21D4 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 250B3B8B0308EB91A1E264C1 /* Debouncer.swift */; };
 		0380D55FC8DE5D93508BF923 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0125E05C2ACCF47E1A325BA1 /* APIError.swift */; };
+		062B71CFC13D834271729B01 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = F33BB1D1CD8C78C7F68C1655 /* NukeUI */; };
 		1487C30C4701B9047487D9A4 /* DesktopRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1D7F69C628616C1FDA8853 /* DesktopRootView.swift */; };
+		188C491F0C515E3D60332E04 /* DesktopUpdatePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 051A76C6A10234B40AEDC855 /* DesktopUpdatePanel.swift */; };
 		27ED2FDB7913B59BE7CEA1BA /* LibraryHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270BA821FC5C35B2BEA6B2CE /* LibraryHistory.swift */; };
 		2CA72E6E944747EE8E9B8E92 /* WatchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F2B8E33AC631E4C846295B /* WatchPreferences.swift */; };
 		3639B5AE0FC54F85C25A5D55 /* PlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28209A84B161B90C239EF281 /* PlaybackService.swift */; };
@@ -23,29 +25,31 @@
 		47D68E86BA24F8E2DDCD1860 /* DesktopMovieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CCB941AD164E50540C165A /* DesktopMovieView.swift */; };
 		4BB7A448B767EE2CDBCE0A12 /* Torrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073CF5903F5D48FD84733492 /* Torrent.swift */; };
 		504F1057266BDFDDFBD4D4E2 /* DesktopPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */; };
-		508F7874BCB70FA34B107C3D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */; };
+		508F7874BCB70FA34B107C3D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 9712D19DBB759BADF5F073F7 /* FirebaseAuth */; };
 		54C871A1817DC69B2A7E3E30 /* MovieRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3AECA4AB85D92592C9F42E /* MovieRepository.swift */; };
 		630DCE8A3C2E3A888CB79AEF /* MovieDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0099147237E35E69858A24 /* MovieDetailViewModel.swift */; };
 		667B1D7B7A8BDBC838D27FE4 /* DesktopLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */; };
+		6C4BE32B0DA839B5D0F6004A /* DesktopUpdateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C970CD8EFC8B70F82E6975C1 /* DesktopUpdateTests.swift */; };
 		6F9C882CA832351E547EDF44 /* DesktopCatalogViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3C2EFA1229FB68C68F09A6C /* DesktopCatalogViews.swift */; };
-		7806A0EF41F8F9C97876E82F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 9712D19DBB759BADF5F073F7 /* FirebaseAuth */; };
+		7806A0EF41F8F9C97876E82F /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 6B6C648B316A1F31D8951580 /* GoogleSignIn */; };
 		789136D13610779B28250B63 /* DesktopPlaybackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */; };
 		7A37E4C33C36A321F5FDBE22 /* WatchHistorySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04550D916A8DA23E9D5C3C77 /* WatchHistorySync.swift */; };
-		7FDE74C58104D24B2960DE3E /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = 7F703283148C8B8340F22587 /* Nuke */; };
+		7FDE74C58104D24B2960DE3E /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */; };
 		88543DCBDFBC1D9CCFA5E95F /* CatalogMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF9C2E9B9F109A4C8592433 /* CatalogMetadataService.swift */; };
 		908CD9B3CCD0EC4FB962A94C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F12E4D8EC6F532CC667D76CF /* Assets.xcassets */; };
 		90D7450AC61D463BCEEB4F55 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1445FC6CF516DCFC4BF6D771 /* SearchViewModel.swift */; };
 		95820838C26252B5BD983D9C /* DesktopAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C70B197320211391C2EE0DC /* DesktopAuthView.swift */; };
 		9785B6AE740D96C2CA5F91EB /* DesktopAuthIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585D3FCA386B341DCF5D14CA /* DesktopAuthIntegrationTests.swift */; };
 		97E5479098FF83306A0BE208 /* DownloadItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E5B04E3173E7FB0CF82D /* DownloadItem.swift */; };
+		98F2A3086994D7AD5935CA2B /* DesktopUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D29E170C47FC05848325F1B /* DesktopUpdateService.swift */; };
 		9971ACDCBF606910ABBBB616 /* OfflineDownloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C86FB4684877674F1B4C94 /* OfflineDownloadTests.swift */; };
 		A25F01A489EC0F99BE6FA4A8 /* OfflineDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC45AFAB3A1078D78D06AA06 /* OfflineDownload.swift */; };
 		A924A1C63133CCE02EF2D06A /* PeopleMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43AFD9B765D06B20C8AB42D /* PeopleMetadataService.swift */; };
 		A93A7FB4380EC372865153D1 /* WatchHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852717C7F1304582D27B7F8B /* WatchHistoryTests.swift */; };
 		AEFA9826807DE2F3230EF953 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80919A5B7CF8AC7F03E45724 /* Movie.swift */; };
-		B4E2CA497067CFB7D2A016C1 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = F33BB1D1CD8C78C7F68C1655 /* NukeUI */; };
+		B4E2CA497067CFB7D2A016C1 /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = 7F703283148C8B8340F22587 /* Nuke */; };
 		BACDF7BF9DE00A7ECB42C1B9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C0DDF5359D538C26F8697590 /* GoogleService-Info.plist */; };
-		BB254838CBB4C8C1FFF9139E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 6B6C648B316A1F31D8951580 /* GoogleSignIn */; };
+		BB254838CBB4C8C1FFF9139E /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 762CCBE219EFEF9F6FCF4DA2 /* Sparkle */; };
 		CA687854081838D59535586A /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05B2F5D24B7B9DE0AE4B5C8E /* HomeViewModel.swift */; };
 		D47CA5FA122255A2DF374CF4 /* MovieDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0754D9979689C9C3C456D6 /* MovieDetail.swift */; };
 		E27386DD4089D94AE11BD8D9 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C19D0C553C3DFD7378169B /* APIClient.swift */; };
@@ -75,6 +79,7 @@
 		0125E05C2ACCF47E1A325BA1 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
 		01BE45CD4B0321AB2C7830D6 /* MirrorDesktopApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorDesktopApp.swift; sourceTree = "<group>"; };
 		04550D916A8DA23E9D5C3C77 /* WatchHistorySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistorySync.swift; sourceTree = "<group>"; };
+		051A76C6A10234B40AEDC855 /* DesktopUpdatePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopUpdatePanel.swift; sourceTree = "<group>"; };
 		05B2F5D24B7B9DE0AE4B5C8E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		073CF5903F5D48FD84733492 /* Torrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Torrent.swift; sourceTree = "<group>"; };
 		0A0754D9979689C9C3C456D6 /* MovieDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetail.swift; sourceTree = "<group>"; };
@@ -105,6 +110,7 @@
 		80919A5B7CF8AC7F03E45724 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
 		852717C7F1304582D27B7F8B /* WatchHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistoryTests.swift; sourceTree = "<group>"; };
 		86F9C1DE8932F133C5E7B178 /* DesktopSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopSession.swift; sourceTree = "<group>"; };
+		8D29E170C47FC05848325F1B /* DesktopUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopUpdateService.swift; sourceTree = "<group>"; };
 		A98C8A9F881E70178F62FA36 /* WatchlistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistItem.swift; sourceTree = "<group>"; };
 		AC45AFAB3A1078D78D06AA06 /* OfflineDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownload.swift; sourceTree = "<group>"; };
 		AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopLibraryViews.swift; sourceTree = "<group>"; };
@@ -114,6 +120,7 @@
 		BD214CF8D698D69170AE29E5 /* FirestoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreService.swift; sourceTree = "<group>"; };
 		C0DDF5359D538C26F8697590 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C43AFD9B765D06B20C8AB42D /* PeopleMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleMetadataService.swift; sourceTree = "<group>"; };
+		C970CD8EFC8B70F82E6975C1 /* DesktopUpdateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopUpdateTests.swift; sourceTree = "<group>"; };
 		CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopPlaybackTests.swift; sourceTree = "<group>"; };
 		CDF9C2E9B9F109A4C8592433 /* CatalogMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogMetadataService.swift; sourceTree = "<group>"; };
 		D8AEECF8734F4983029481BD /* Cast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
@@ -131,11 +138,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB254838CBB4C8C1FFF9139E /* GoogleSignIn in Frameworks */,
-				7806A0EF41F8F9C97876E82F /* FirebaseAuth in Frameworks */,
-				508F7874BCB70FA34B107C3D /* FirebaseFirestore in Frameworks */,
-				7FDE74C58104D24B2960DE3E /* Nuke in Frameworks */,
-				B4E2CA497067CFB7D2A016C1 /* NukeUI in Frameworks */,
+				BB254838CBB4C8C1FFF9139E /* Sparkle in Frameworks */,
+				7806A0EF41F8F9C97876E82F /* GoogleSignIn in Frameworks */,
+				508F7874BCB70FA34B107C3D /* FirebaseAuth in Frameworks */,
+				7FDE74C58104D24B2960DE3E /* FirebaseFirestore in Frameworks */,
+				B4E2CA497067CFB7D2A016C1 /* Nuke in Frameworks */,
+				062B71CFC13D834271729B01 /* NukeUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +273,7 @@
 				AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */,
 				42CCB941AD164E50540C165A /* DesktopMovieView.swift */,
 				3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */,
+				051A76C6A10234B40AEDC855 /* DesktopUpdatePanel.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -274,6 +283,7 @@
 			children = (
 				585D3FCA386B341DCF5D14CA /* DesktopAuthIntegrationTests.swift */,
 				CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */,
+				C970CD8EFC8B70F82E6975C1 /* DesktopUpdateTests.swift */,
 				76C86FB4684877674F1B4C94 /* OfflineDownloadTests.swift */,
 				852717C7F1304582D27B7F8B /* WatchHistoryTests.swift */,
 			);
@@ -353,6 +363,7 @@
 			isa = PBXGroup;
 			children = (
 				F9C02FD9FDA67E01A07FC751 /* AuthService.swift */,
+				8D29E170C47FC05848325F1B /* DesktopUpdateService.swift */,
 				DC43D09E49BEB41380C47F0F /* DownloadStore.swift */,
 				270BA821FC5C35B2BEA6B2CE /* LibraryHistory.swift */,
 			);
@@ -418,6 +429,7 @@
 			);
 			name = MirrorDesktop;
 			packageProductDependencies = (
+				762CCBE219EFEF9F6FCF4DA2 /* Sparkle */,
 				6B6C648B316A1F31D8951580 /* GoogleSignIn */,
 				9712D19DBB759BADF5F073F7 /* FirebaseAuth */,
 				3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */,
@@ -473,6 +485,7 @@
 				FCE43CD0C5D1A3010005E1C1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				F2B75A9ED147553E4EB18711 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				6CE83A13069CC8750EA8BB2B /* XCRemoteSwiftPackageReference "Nuke" */,
+				0F10B87564BAF9DD6F3D468E /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0418922C2F324903FD4EBC20 /* Products */;
@@ -520,6 +533,8 @@
 				1487C30C4701B9047487D9A4 /* DesktopRootView.swift in Sources */,
 				E45CF6785F4E8EC75E832D9F /* DesktopSession.swift in Sources */,
 				381DBDE06F3355AC6FA5E6DD /* DesktopTheme.swift in Sources */,
+				188C491F0C515E3D60332E04 /* DesktopUpdatePanel.swift in Sources */,
+				98F2A3086994D7AD5935CA2B /* DesktopUpdateService.swift in Sources */,
 				97E5479098FF83306A0BE208 /* DownloadItem.swift in Sources */,
 				FBC9897A6BEC28CF156E5CC2 /* DownloadStore.swift in Sources */,
 				392329BA18721D052D05F996 /* FirestoreService.swift in Sources */,
@@ -552,6 +567,7 @@
 			files = (
 				9785B6AE740D96C2CA5F91EB /* DesktopAuthIntegrationTests.swift in Sources */,
 				789136D13610779B28250B63 /* DesktopPlaybackTests.swift in Sources */,
+				6C4BE32B0DA839B5D0F6004A /* DesktopUpdateTests.swift in Sources */,
 				9971ACDCBF606910ABBBB616 /* OfflineDownloadTests.swift in Sources */,
 				A93A7FB4380EC372865153D1 /* WatchHistoryTests.swift in Sources */,
 			);
@@ -800,6 +816,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		0F10B87564BAF9DD6F3D468E /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.1;
+			};
+		};
 		6CE83A13069CC8750EA8BB2B /* XCRemoteSwiftPackageReference "Nuke" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kean/Nuke.git";
@@ -836,6 +860,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F2B75A9ED147553E4EB18711 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		762CCBE219EFEF9F6FCF4DA2 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0F10B87564BAF9DD6F3D468E /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 		7F703283148C8B8340F22587 /* Nuke */ = {
 			isa = XCSwiftPackageProductDependency;

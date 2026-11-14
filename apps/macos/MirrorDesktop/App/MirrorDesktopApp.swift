@@ -82,6 +82,10 @@ final class DesktopAppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.regular)
     NSApp.activate(ignoringOtherApps: true)
+    if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+      ProcessInfo.processInfo.environment["XCTestBundlePath"] == nil {
+      DesktopUpdateService.shared.start()
+    }
   }
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 }

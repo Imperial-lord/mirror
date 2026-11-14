@@ -91,6 +91,7 @@ struct DesktopSettingsView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 30) {
         DesktopPageHeader(title: "Settings", subtitle: "Make yourself comfortable.")
+        DesktopUpdatePanel(updates: DesktopUpdateService.shared)
         VStack(alignment: .leading, spacing: 20) {
           Text("Appearance").font(.headline)
           HStack(spacing: 14) {
@@ -159,7 +160,7 @@ struct DesktopSettingsView: View {
         HStack {
           VStack(alignment: .leading, spacing: 7) {
             Text("Mirror for Mac").font(.headline)
-            Text("Version 1.0 · Stories, without distractions.").font(.caption).foregroundStyle(
+            Text("Version \(DesktopUpdateService.shared.currentVersion) · Stories, without distractions.").font(.caption).foregroundStyle(
               Color.mirrorTextTertiary)
           }
           Spacer()

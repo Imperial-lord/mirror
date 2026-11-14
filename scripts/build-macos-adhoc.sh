@@ -25,11 +25,12 @@ args=(-project apps/macos/MirrorDesktop.xcodeproj -scheme MirrorDesktop
       -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath "$output/DerivedData"
       -clonedSourcePackagesDirPath "$packages" -disableAutomaticPackageResolution -skipPackageUpdates
       CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS=
+      MIRROR_PORTABLE_BUILD=YES
       PROVISIONING_PROFILE_SPECIFIER=)
 if [[ -n "${MIRROR_RELEASE_VERSION:-}${MIRROR_RELEASE_BUILD:-}" ]]; then
   if [[ ! "${MIRROR_RELEASE_VERSION:-}" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] ||
-     [[ ! "${MIRROR_RELEASE_BUILD:-}" =~ ^[1-9][0-9]*$ ]]; then
-    echo 'Supply a valid MIRROR_RELEASE_VERSION and positive MIRROR_RELEASE_BUILD together.' >&2; exit 2
+     [[ ! "${MIRROR_RELEASE_BUILD:-}" =~ ^[1-9][0-9]*(\.[0-9]+){0,2}$ ]]; then
+    echo 'Supply a valid MIRROR_RELEASE_VERSION and numeric MIRROR_RELEASE_BUILD together.' >&2; exit 2
   fi
   args+=("MARKETING_VERSION=$MIRROR_RELEASE_VERSION" "CURRENT_PROJECT_VERSION=$MIRROR_RELEASE_BUILD")
 fi
@@ -50,6 +51,7 @@ mkdir -p "$notices"
 cp "$output/keychain-patch-manifest.json" "$notices/"
 install -m 644 "$packages/checkouts/firebase-ios-sdk/LICENSE" "$notices/Firebase-LICENSE.txt"
 install -m 644 "$packages/checkouts/GoogleUtilities/LICENSE" "$notices/GoogleUtilities-LICENSE.txt"
+install -m 644 "$packages/checkouts/Sparkle/LICENSE" "$notices/Sparkle-LICENSE.txt"
 cat > "$notices/README.txt" <<'EOF'
 Mirror portable ad-hoc build
 
