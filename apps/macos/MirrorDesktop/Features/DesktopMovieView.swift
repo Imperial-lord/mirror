@@ -66,20 +66,22 @@ struct DesktopMovieView: View {
               } label: {
                 PhosphorView(
                   LibraryStore.shared.favorites.contains(where: { $0.id == movie.id })
-                    ? .check : .add, size: 20
+                    ? .check : .add, size: 20, color: .white
                 )
                 .frame(width: 43, height: 43).background(.white.opacity(0.15), in: Circle())
               }.buttonStyle(.plain).help("Add to library")
               Button {
                 requireAccount { download = true }
               } label: {
-                PhosphorView(.downloadLinear, size: 20).frame(width: 43, height: 43).background(
-                  .white.opacity(0.15), in: Circle())
+                PhosphorView(.downloadLinear, size: 20, color: .white).frame(width: 43, height: 43)
+                  .background(
+                    .white.opacity(0.15), in: Circle())
               }.buttonStyle(.plain).help("Download movie")
               if let url = URL(string: movie.url) {
                 ShareLink(item: url) {
-                  PhosphorView(.share, size: 20).frame(width: 43, height: 43).background(
-                    .white.opacity(0.15), in: Circle())
+                  PhosphorView(.share, size: 20, color: .white).frame(width: 43, height: 43)
+                    .background(
+                      .white.opacity(0.15), in: Circle())
                 }.buttonStyle(.plain).help("Share movie")
               }
             }.padding(.top, 7)

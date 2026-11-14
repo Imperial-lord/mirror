@@ -171,7 +171,7 @@ struct DesktopHomeView: View {
             session.open(movie.id)
           } label: {
             HStack {
-              PhosphorView(.infoLinear, size: 18)
+              PhosphorView(.infoLinear, size: 18, color: .white)
               Text("More info")
             }.font(.system(size: 13)).padding(.horizontal, 20).frame(height: 44).background(
               .white.opacity(0.13), in: Capsule())
