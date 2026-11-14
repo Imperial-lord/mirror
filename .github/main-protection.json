@@ -5,7 +5,8 @@
       "Security",
       "Server tests",
       "iOS build and tests",
-      "Develop to main"
+      "Develop to main",
+      "macOS build and tests"
     ]
   },
   "enforce_admins": true,

@@ -1,0 +1,87 @@
+name: MirrorDesktop
+options:
+  bundleIdPrefix: com.mirror
+  deploymentTarget:
+    macOS: '14.0'
+  createIntermediateGroups: true
+packages:
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS.git
+    from: 8.0.0
+  Nuke:
+    url: https://github.com/kean/Nuke.git
+    from: 12.8.0
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk.git
+    from: 11.0.0
+targets:
+  MirrorDesktop:
+    type: application
+    platform: macOS
+    sources:
+      - path: MirrorDesktop
+      - path: Config/GoogleService-Info.plist
+        buildPhase: resources
+      - path: ../ios/Mirror/Assets.xcassets
+        buildPhase: resources
+      - path: ../ios/Mirror/Models
+      - path: ../ios/Mirror/Core/Networking
+      - path: ../ios/Mirror/Repositories
+      - path: ../ios/Mirror/Core/Utilities/Debouncer.swift
+      - path: ../ios/Mirror/Core/DesignSystem/Phosphor.swift
+      - path: ../ios/Mirror/Core/Services/LibraryStore.swift
+      - path: ../ios/Mirror/Core/Services/FirestoreService.swift
+      - path: ../ios/Mirror/Core/Services/WatchHistorySync.swift
+      - path: ../ios/Mirror/Core/Services/CatalogMetadataService.swift
+      - path: ../ios/Mirror/Features/Home/HomeViewModel.swift
+      - path: ../ios/Mirror/Features/Home/WatchPreferences.swift
+      - path: ../ios/Mirror/Features/Search/SearchViewModel.swift
+      - path: ../ios/Mirror/Features/MovieDetail/PeopleMetadataService.swift
+      - path: ../ios/Mirror/Features/MovieDetail/MovieDetailViewModel.swift
+      - path: ../ios/Mirror/Features/Player/PlaybackService.swift
+      - path: ../ios/Mirror/Features/Player/Subtitles.swift
+      - path: ../ios/Mirror/Features/Downloads/OfflineDownload.swift
+    settings:
+      base:
+        SWIFT_VERSION: '5.9'
+        INFOPLIST_FILE: MirrorDesktop/Info.plist
+        PRODUCT_NAME: Mirror
+        PRODUCT_MODULE_NAME: MirrorDesktop
+        ENABLE_APP_SANDBOX: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: MacAppIcon
+        CODE_SIGN_IDENTITY: 'Apple Development'
+        CODE_SIGN_ENTITLEMENTS: MirrorDesktop/MirrorDesktop.entitlements
+        MACOSX_DEPLOYMENT_TARGET: '14.0'
+    configFiles:
+      Debug: Config/Base.xcconfig
+      Release: Config/Base.xcconfig
+    dependencies:
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
+      - package: Nuke
+        product: Nuke
+      - package: Nuke
+        product: NukeUI
+  MirrorDesktopTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [MirrorDesktopTests]
+    settings:
+      base:
+        SWIFT_VERSION: '5.9'
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Mirror.app/Contents/MacOS/Mirror"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: MirrorDesktop
+schemes:
+  MirrorDesktop:
+    build:
+      targets:
+        MirrorDesktop: all
+    test:
+      targets: [MirrorDesktopTests]

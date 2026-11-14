@@ -11,6 +11,7 @@
 *.p8
 *.key
 *.mobileprovision
+*.provisionprofile
 **/*service-account*.json
 **/*serviceAccount*.json
 **/credentials.json
@@ -23,6 +24,8 @@ node_modules/
 DerivedData/
 build/
 *.xcresult/
+*.xcarchive/
+*.dSYM/
 xcuserdata/
 *.xcuserstate
 .runtime/

@@ -24,7 +24,7 @@ for name in filter(None, paths):
     if (any(p in {'node_modules', '.build', '.runtime', 'xcuserdata', 'DerivedData'} for p in parts)
             or (path.name.startswith('.env') and not example)
             or path.name in {'Local.xcconfig', 'GoogleService-Info.plist', 'credentials.json', '.DS_Store'}
-            or path.suffix in {'.pem', '.p12', '.p8', '.key', '.mobileprovision'}):
+            or path.suffix in {'.pem', '.p12', '.p8', '.key', '.mobileprovision', '.provisionprofile'}):
         errors.append(f'{name}: private configuration or generated output must not be tracked')
         continue
     file = root / name

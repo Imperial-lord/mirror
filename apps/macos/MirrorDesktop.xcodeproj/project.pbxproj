@@ -1,0 +1,858 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0028AFE84831CA26BD0C8138 /* WatchHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B2DCCEF54548F8C7BE0BBB /* WatchHistoryItem.swift */; };
+		009EDF5B44AAA1D8454F5D55 /* MirrorDesktopApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BE45CD4B0321AB2C7830D6 /* MirrorDesktopApp.swift */; };
+		0142C6B032ECB083501B21D4 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 250B3B8B0308EB91A1E264C1 /* Debouncer.swift */; };
+		0380D55FC8DE5D93508BF923 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0125E05C2ACCF47E1A325BA1 /* APIError.swift */; };
+		1487C30C4701B9047487D9A4 /* DesktopRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1D7F69C628616C1FDA8853 /* DesktopRootView.swift */; };
+		27ED2FDB7913B59BE7CEA1BA /* LibraryHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270BA821FC5C35B2BEA6B2CE /* LibraryHistory.swift */; };
+		2CA72E6E944747EE8E9B8E92 /* WatchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F2B8E33AC631E4C846295B /* WatchPreferences.swift */; };
+		3639B5AE0FC54F85C25A5D55 /* PlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28209A84B161B90C239EF281 /* PlaybackService.swift */; };
+		381DBDE06F3355AC6FA5E6DD /* DesktopTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5383CD202605F671A327DE7B /* DesktopTheme.swift */; };
+		392329BA18721D052D05F996 /* FirestoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD214CF8D698D69170AE29E5 /* FirestoreService.swift */; };
+		3C07DD29639E8D02E6B4339B /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9C02FD9FDA67E01A07FC751 /* AuthService.swift */; };
+		404C2901F37D0D2A8AC69A62 /* Subtitles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E309535E6668248055EBBA /* Subtitles.swift */; };
+		40765C4C535FB80B898D1605 /* APIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F01FADCB5145F1E06A8399 /* APIResponse.swift */; };
+		47D68E86BA24F8E2DDCD1860 /* DesktopMovieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CCB941AD164E50540C165A /* DesktopMovieView.swift */; };
+		4BB7A448B767EE2CDBCE0A12 /* Torrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073CF5903F5D48FD84733492 /* Torrent.swift */; };
+		504F1057266BDFDDFBD4D4E2 /* DesktopPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */; };
+		508F7874BCB70FA34B107C3D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */; };
+		54C871A1817DC69B2A7E3E30 /* MovieRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3AECA4AB85D92592C9F42E /* MovieRepository.swift */; };
+		630DCE8A3C2E3A888CB79AEF /* MovieDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0099147237E35E69858A24 /* MovieDetailViewModel.swift */; };
+		667B1D7B7A8BDBC838D27FE4 /* DesktopLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */; };
+		6F9C882CA832351E547EDF44 /* DesktopCatalogViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3C2EFA1229FB68C68F09A6C /* DesktopCatalogViews.swift */; };
+		7806A0EF41F8F9C97876E82F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 9712D19DBB759BADF5F073F7 /* FirebaseAuth */; };
+		789136D13610779B28250B63 /* DesktopPlaybackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */; };
+		7A37E4C33C36A321F5FDBE22 /* WatchHistorySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04550D916A8DA23E9D5C3C77 /* WatchHistorySync.swift */; };
+		7FDE74C58104D24B2960DE3E /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = 7F703283148C8B8340F22587 /* Nuke */; };
+		88543DCBDFBC1D9CCFA5E95F /* CatalogMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF9C2E9B9F109A4C8592433 /* CatalogMetadataService.swift */; };
+		908CD9B3CCD0EC4FB962A94C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F12E4D8EC6F532CC667D76CF /* Assets.xcassets */; };
+		90D7450AC61D463BCEEB4F55 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1445FC6CF516DCFC4BF6D771 /* SearchViewModel.swift */; };
+		95820838C26252B5BD983D9C /* DesktopAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C70B197320211391C2EE0DC /* DesktopAuthView.swift */; };
+		9785B6AE740D96C2CA5F91EB /* DesktopAuthIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 585D3FCA386B341DCF5D14CA /* DesktopAuthIntegrationTests.swift */; };
+		97E5479098FF83306A0BE208 /* DownloadItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B307E5B04E3173E7FB0CF82D /* DownloadItem.swift */; };
+		9971ACDCBF606910ABBBB616 /* OfflineDownloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C86FB4684877674F1B4C94 /* OfflineDownloadTests.swift */; };
+		A25F01A489EC0F99BE6FA4A8 /* OfflineDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC45AFAB3A1078D78D06AA06 /* OfflineDownload.swift */; };
+		A924A1C63133CCE02EF2D06A /* PeopleMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43AFD9B765D06B20C8AB42D /* PeopleMetadataService.swift */; };
+		A93A7FB4380EC372865153D1 /* WatchHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852717C7F1304582D27B7F8B /* WatchHistoryTests.swift */; };
+		AEFA9826807DE2F3230EF953 /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80919A5B7CF8AC7F03E45724 /* Movie.swift */; };
+		B4E2CA497067CFB7D2A016C1 /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = F33BB1D1CD8C78C7F68C1655 /* NukeUI */; };
+		BACDF7BF9DE00A7ECB42C1B9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C0DDF5359D538C26F8697590 /* GoogleService-Info.plist */; };
+		BB254838CBB4C8C1FFF9139E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 6B6C648B316A1F31D8951580 /* GoogleSignIn */; };
+		CA687854081838D59535586A /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05B2F5D24B7B9DE0AE4B5C8E /* HomeViewModel.swift */; };
+		D47CA5FA122255A2DF374CF4 /* MovieDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0754D9979689C9C3C456D6 /* MovieDetail.swift */; };
+		E27386DD4089D94AE11BD8D9 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24C19D0C553C3DFD7378169B /* APIClient.swift */; };
+		E45CF6785F4E8EC75E832D9F /* DesktopSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F9C1DE8932F133C5E7B178 /* DesktopSession.swift */; };
+		E8A064C25395D19D55E621A8 /* Genre.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC33ABCC76EE87E1E32F248 /* Genre.swift */; };
+		E9A912125B3308A6F1C85435 /* WatchlistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98C8A9F881E70178F62FA36 /* WatchlistItem.swift */; };
+		EA55F40A4853F667B6F3A583 /* Cast.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8AEECF8734F4983029481BD /* Cast.swift */; };
+		EF249D4C091F0AED4F741037 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189B9AABA2F576E1A88A092 /* APIEndpoint.swift */; };
+		F1165623FF60057068EA9CD3 /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 194122163B81A73CEEA27629 /* LibraryStore.swift */; };
+		F8AAE06C7F5F38E394E2C64C /* Phosphor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5206BE8DA9E34E43F827B7EE /* Phosphor.swift */; };
+		FA46F6733CE21E3308403FA2 /* DesktopAccountViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ABFDB5256D4FF9200A2DC9 /* DesktopAccountViews.swift */; };
+		FBC9897A6BEC28CF156E5CC2 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC43D09E49BEB41380C47F0F /* DownloadStore.swift */; };
+		FE3BC22ED6B76B54CE11481A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75E9BC97CF566F1BED3925CE /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6C37AF6194555F151E2BC061 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA8F65EB9F23F8F926979897 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3B3115BA200ADE77A1CA56DB;
+			remoteInfo = MirrorDesktop;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0125E05C2ACCF47E1A325BA1 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		01BE45CD4B0321AB2C7830D6 /* MirrorDesktopApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorDesktopApp.swift; sourceTree = "<group>"; };
+		04550D916A8DA23E9D5C3C77 /* WatchHistorySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistorySync.swift; sourceTree = "<group>"; };
+		05B2F5D24B7B9DE0AE4B5C8E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		073CF5903F5D48FD84733492 /* Torrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Torrent.swift; sourceTree = "<group>"; };
+		0A0754D9979689C9C3C456D6 /* MovieDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetail.swift; sourceTree = "<group>"; };
+		0AC33ABCC76EE87E1E32F248 /* Genre.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Genre.swift; sourceTree = "<group>"; };
+		0B8C69B72755230EE94B7F39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0C70B197320211391C2EE0DC /* DesktopAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopAuthView.swift; sourceTree = "<group>"; };
+		1445FC6CF516DCFC4BF6D771 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		17F01FADCB5145F1E06A8399 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
+		194122163B81A73CEEA27629 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		1A3AECA4AB85D92592C9F42E /* MovieRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieRepository.swift; sourceTree = "<group>"; };
+		22899022CE51CCECDDB68EA0 /* MirrorDesktop.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MirrorDesktop.entitlements; sourceTree = "<group>"; };
+		24C19D0C553C3DFD7378169B /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		250B3B8B0308EB91A1E264C1 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
+		270BA821FC5C35B2BEA6B2CE /* LibraryHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryHistory.swift; sourceTree = "<group>"; };
+		28209A84B161B90C239EF281 /* PlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackService.swift; sourceTree = "<group>"; };
+		36E309535E6668248055EBBA /* Subtitles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subtitles.swift; sourceTree = "<group>"; };
+		3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopPlayerView.swift; sourceTree = "<group>"; };
+		42CCB941AD164E50540C165A /* DesktopMovieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopMovieView.swift; sourceTree = "<group>"; };
+		5206BE8DA9E34E43F827B7EE /* Phosphor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phosphor.swift; sourceTree = "<group>"; };
+		5383CD202605F671A327DE7B /* DesktopTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTheme.swift; sourceTree = "<group>"; };
+		585D3FCA386B341DCF5D14CA /* DesktopAuthIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopAuthIntegrationTests.swift; sourceTree = "<group>"; };
+		5D46EA8540D9990206B6451D /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		75ABFDB5256D4FF9200A2DC9 /* DesktopAccountViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopAccountViews.swift; sourceTree = "<group>"; };
+		75E9BC97CF566F1BED3925CE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		76C86FB4684877674F1B4C94 /* OfflineDownloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownloadTests.swift; sourceTree = "<group>"; };
+		7B0099147237E35E69858A24 /* MovieDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailViewModel.swift; sourceTree = "<group>"; };
+		7C4360649127894DA406F31D /* MirrorDesktopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MirrorDesktopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		80919A5B7CF8AC7F03E45724 /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
+		852717C7F1304582D27B7F8B /* WatchHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistoryTests.swift; sourceTree = "<group>"; };
+		86F9C1DE8932F133C5E7B178 /* DesktopSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopSession.swift; sourceTree = "<group>"; };
+		A98C8A9F881E70178F62FA36 /* WatchlistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistItem.swift; sourceTree = "<group>"; };
+		AC45AFAB3A1078D78D06AA06 /* OfflineDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineDownload.swift; sourceTree = "<group>"; };
+		AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopLibraryViews.swift; sourceTree = "<group>"; };
+		B2F2B8E33AC631E4C846295B /* WatchPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPreferences.swift; sourceTree = "<group>"; };
+		B307E5B04E3173E7FB0CF82D /* DownloadItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadItem.swift; sourceTree = "<group>"; };
+		BD1D7F69C628616C1FDA8853 /* DesktopRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopRootView.swift; sourceTree = "<group>"; };
+		BD214CF8D698D69170AE29E5 /* FirestoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreService.swift; sourceTree = "<group>"; };
+		C0DDF5359D538C26F8697590 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		C43AFD9B765D06B20C8AB42D /* PeopleMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleMetadataService.swift; sourceTree = "<group>"; };
+		CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopPlaybackTests.swift; sourceTree = "<group>"; };
+		CDF9C2E9B9F109A4C8592433 /* CatalogMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogMetadataService.swift; sourceTree = "<group>"; };
+		D8AEECF8734F4983029481BD /* Cast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cast.swift; sourceTree = "<group>"; };
+		DC43D09E49BEB41380C47F0F /* DownloadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadStore.swift; sourceTree = "<group>"; };
+		DCB9DE37ED270B2CBC337527 /* MirrorDesktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MirrorDesktop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E189B9AABA2F576E1A88A092 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
+		E3C2EFA1229FB68C68F09A6C /* DesktopCatalogViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopCatalogViews.swift; sourceTree = "<group>"; };
+		F12E4D8EC6F532CC667D76CF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F2B2DCCEF54548F8C7BE0BBB /* WatchHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistoryItem.swift; sourceTree = "<group>"; };
+		F9C02FD9FDA67E01A07FC751 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		65879438FFECA2A138361047 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB254838CBB4C8C1FFF9139E /* GoogleSignIn in Frameworks */,
+				7806A0EF41F8F9C97876E82F /* FirebaseAuth in Frameworks */,
+				508F7874BCB70FA34B107C3D /* FirebaseFirestore in Frameworks */,
+				7FDE74C58104D24B2960DE3E /* Nuke in Frameworks */,
+				B4E2CA497067CFB7D2A016C1 /* NukeUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		017DA9F5E33E794A8CAC898B /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				7FE521B4F66490863D8455E8 /* DesignSystem */,
+				0951C50A3E004144710FEC4C /* Networking */,
+				3C43A1E9066CB4E049C1AB54 /* Services */,
+				1B923ACA1BD580E293E50F41 /* Utilities */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		0418922C2F324903FD4EBC20 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DCB9DE37ED270B2CBC337527 /* MirrorDesktop.app */,
+				7C4360649127894DA406F31D /* MirrorDesktopTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		05C79428BC45C05BBD5F1685 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BD1D7F69C628616C1FDA8853 /* DesktopRootView.swift */,
+				86F9C1DE8932F133C5E7B178 /* DesktopSession.swift */,
+				01BE45CD4B0321AB2C7830D6 /* MirrorDesktopApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		0951C50A3E004144710FEC4C /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				24C19D0C553C3DFD7378169B /* APIClient.swift */,
+				E189B9AABA2F576E1A88A092 /* APIEndpoint.swift */,
+				0125E05C2ACCF47E1A325BA1 /* APIError.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		0AB672F77F894F4ABB704B70 /* apps */ = {
+			isa = PBXGroup;
+			children = (
+				A2DEB76417B2F84D09076931 /* ios */,
+			);
+			name = apps;
+			path = ..;
+			sourceTree = "<group>";
+		};
+		0FBE71FF837AB93E65969599 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				5D46EA8540D9990206B6451D /* Base.xcconfig */,
+				C0DDF5359D538C26F8697590 /* GoogleService-Info.plist */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		14ADBA98A0BF27BEDAB82954 /* Mirror */ = {
+			isa = PBXGroup;
+			children = (
+				75E9BC97CF566F1BED3925CE /* Assets.xcassets */,
+				017DA9F5E33E794A8CAC898B /* Core */,
+				9F62BD8B40E3DAD7AF127F1D /* Features */,
+				188CF28A85260A866E6560F0 /* Models */,
+				7AAF0FED8ED9223A886000F3 /* Repositories */,
+			);
+			path = Mirror;
+			sourceTree = "<group>";
+		};
+		188CF28A85260A866E6560F0 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				17F01FADCB5145F1E06A8399 /* APIResponse.swift */,
+				D8AEECF8734F4983029481BD /* Cast.swift */,
+				0AC33ABCC76EE87E1E32F248 /* Genre.swift */,
+				80919A5B7CF8AC7F03E45724 /* Movie.swift */,
+				0A0754D9979689C9C3C456D6 /* MovieDetail.swift */,
+				073CF5903F5D48FD84733492 /* Torrent.swift */,
+				83C0BD043D3CC00573984FBD /* Persistence */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		1B923ACA1BD580E293E50F41 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				250B3B8B0308EB91A1E264C1 /* Debouncer.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		2FE5B7C8B83374EC465927D2 = {
+			isa = PBXGroup;
+			children = (
+				0AB672F77F894F4ABB704B70 /* apps */,
+				0FBE71FF837AB93E65969599 /* Config */,
+				6F4A38DADAB53B71019C2D7A /* MirrorDesktop */,
+				4F4A41426140816EEE012201 /* MirrorDesktopTests */,
+				0418922C2F324903FD4EBC20 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3C43A1E9066CB4E049C1AB54 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CDF9C2E9B9F109A4C8592433 /* CatalogMetadataService.swift */,
+				BD214CF8D698D69170AE29E5 /* FirestoreService.swift */,
+				194122163B81A73CEEA27629 /* LibraryStore.swift */,
+				04550D916A8DA23E9D5C3C77 /* WatchHistorySync.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		4477673DC0008361AF75EF6E /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				75ABFDB5256D4FF9200A2DC9 /* DesktopAccountViews.swift */,
+				0C70B197320211391C2EE0DC /* DesktopAuthView.swift */,
+				E3C2EFA1229FB68C68F09A6C /* DesktopCatalogViews.swift */,
+				AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */,
+				42CCB941AD164E50540C165A /* DesktopMovieView.swift */,
+				3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		4F4A41426140816EEE012201 /* MirrorDesktopTests */ = {
+			isa = PBXGroup;
+			children = (
+				585D3FCA386B341DCF5D14CA /* DesktopAuthIntegrationTests.swift */,
+				CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */,
+				76C86FB4684877674F1B4C94 /* OfflineDownloadTests.swift */,
+				852717C7F1304582D27B7F8B /* WatchHistoryTests.swift */,
+			);
+			path = MirrorDesktopTests;
+			sourceTree = "<group>";
+		};
+		6E0AA4102FDEBCD333DA4880 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				05B2F5D24B7B9DE0AE4B5C8E /* HomeViewModel.swift */,
+				B2F2B8E33AC631E4C846295B /* WatchPreferences.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		6F4A38DADAB53B71019C2D7A /* MirrorDesktop */ = {
+			isa = PBXGroup;
+			children = (
+				F12E4D8EC6F532CC667D76CF /* Assets.xcassets */,
+				0B8C69B72755230EE94B7F39 /* Info.plist */,
+				22899022CE51CCECDDB68EA0 /* MirrorDesktop.entitlements */,
+				05C79428BC45C05BBD5F1685 /* App */,
+				D3798ABEE4A186253474494E /* Design */,
+				4477673DC0008361AF75EF6E /* Features */,
+				AF78BBF8666D7272EAF8A857 /* Services */,
+			);
+			path = MirrorDesktop;
+			sourceTree = "<group>";
+		};
+		7AAF0FED8ED9223A886000F3 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				1A3AECA4AB85D92592C9F42E /* MovieRepository.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		7FE521B4F66490863D8455E8 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				5206BE8DA9E34E43F827B7EE /* Phosphor.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		83C0BD043D3CC00573984FBD /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				B307E5B04E3173E7FB0CF82D /* DownloadItem.swift */,
+				F2B2DCCEF54548F8C7BE0BBB /* WatchHistoryItem.swift */,
+				A98C8A9F881E70178F62FA36 /* WatchlistItem.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		9F62BD8B40E3DAD7AF127F1D /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				C4B19CE64EC4C28FB30A1A2D /* Downloads */,
+				6E0AA4102FDEBCD333DA4880 /* Home */,
+				C9FF3A47CB094111BA77B74C /* MovieDetail */,
+				BD411A77F11638D73482329A /* Player */,
+				B8EC9283E3AE4DA876A8F5EA /* Search */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A2DEB76417B2F84D09076931 /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				14ADBA98A0BF27BEDAB82954 /* Mirror */,
+			);
+			path = ios;
+			sourceTree = "<group>";
+		};
+		AF78BBF8666D7272EAF8A857 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				F9C02FD9FDA67E01A07FC751 /* AuthService.swift */,
+				DC43D09E49BEB41380C47F0F /* DownloadStore.swift */,
+				270BA821FC5C35B2BEA6B2CE /* LibraryHistory.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B8EC9283E3AE4DA876A8F5EA /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				1445FC6CF516DCFC4BF6D771 /* SearchViewModel.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		BD411A77F11638D73482329A /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				28209A84B161B90C239EF281 /* PlaybackService.swift */,
+				36E309535E6668248055EBBA /* Subtitles.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		C4B19CE64EC4C28FB30A1A2D /* Downloads */ = {
+			isa = PBXGroup;
+			children = (
+				AC45AFAB3A1078D78D06AA06 /* OfflineDownload.swift */,
+			);
+			path = Downloads;
+			sourceTree = "<group>";
+		};
+		C9FF3A47CB094111BA77B74C /* MovieDetail */ = {
+			isa = PBXGroup;
+			children = (
+				7B0099147237E35E69858A24 /* MovieDetailViewModel.swift */,
+				C43AFD9B765D06B20C8AB42D /* PeopleMetadataService.swift */,
+			);
+			path = MovieDetail;
+			sourceTree = "<group>";
+		};
+		D3798ABEE4A186253474494E /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				5383CD202605F671A327DE7B /* DesktopTheme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3B3115BA200ADE77A1CA56DB /* MirrorDesktop */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 17A210CE8754823A3B40AEC2 /* Build configuration list for PBXNativeTarget "MirrorDesktop" */;
+			buildPhases = (
+				0B7FD54817AA23953E1FF68E /* Sources */,
+				273CA7A7053A00F42838DE3F /* Resources */,
+				65879438FFECA2A138361047 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MirrorDesktop;
+			packageProductDependencies = (
+				6B6C648B316A1F31D8951580 /* GoogleSignIn */,
+				9712D19DBB759BADF5F073F7 /* FirebaseAuth */,
+				3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */,
+				7F703283148C8B8340F22587 /* Nuke */,
+				F33BB1D1CD8C78C7F68C1655 /* NukeUI */,
+			);
+			productName = MirrorDesktop;
+			productReference = DCB9DE37ED270B2CBC337527 /* MirrorDesktop.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F8D99819144D4811A8352292 /* MirrorDesktopTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 62907EDAB7DBDEF2A37E7079 /* Build configuration list for PBXNativeTarget "MirrorDesktopTests" */;
+			buildPhases = (
+				43298FA9E9D5B317FB30DF43 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C3E61DC8E3965F94A5AE2AA6 /* PBXTargetDependency */,
+			);
+			name = MirrorDesktopTests;
+			packageProductDependencies = (
+			);
+			productName = MirrorDesktopTests;
+			productReference = 7C4360649127894DA406F31D /* MirrorDesktopTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CA8F65EB9F23F8F926979897 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					3B3115BA200ADE77A1CA56DB = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = A9C1BC218408A0EB376B8277 /* Build configuration list for PBXProject "MirrorDesktop" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2FE5B7C8B83374EC465927D2;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FCE43CD0C5D1A3010005E1C1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				F2B75A9ED147553E4EB18711 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				6CE83A13069CC8750EA8BB2B /* XCRemoteSwiftPackageReference "Nuke" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0418922C2F324903FD4EBC20 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3B3115BA200ADE77A1CA56DB /* MirrorDesktop */,
+				F8D99819144D4811A8352292 /* MirrorDesktopTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		273CA7A7053A00F42838DE3F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				908CD9B3CCD0EC4FB962A94C /* Assets.xcassets in Resources */,
+				FE3BC22ED6B76B54CE11481A /* Assets.xcassets in Resources */,
+				BACDF7BF9DE00A7ECB42C1B9 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0B7FD54817AA23953E1FF68E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E27386DD4089D94AE11BD8D9 /* APIClient.swift in Sources */,
+				EF249D4C091F0AED4F741037 /* APIEndpoint.swift in Sources */,
+				0380D55FC8DE5D93508BF923 /* APIError.swift in Sources */,
+				40765C4C535FB80B898D1605 /* APIResponse.swift in Sources */,
+				3C07DD29639E8D02E6B4339B /* AuthService.swift in Sources */,
+				EA55F40A4853F667B6F3A583 /* Cast.swift in Sources */,
+				88543DCBDFBC1D9CCFA5E95F /* CatalogMetadataService.swift in Sources */,
+				0142C6B032ECB083501B21D4 /* Debouncer.swift in Sources */,
+				FA46F6733CE21E3308403FA2 /* DesktopAccountViews.swift in Sources */,
+				95820838C26252B5BD983D9C /* DesktopAuthView.swift in Sources */,
+				6F9C882CA832351E547EDF44 /* DesktopCatalogViews.swift in Sources */,
+				667B1D7B7A8BDBC838D27FE4 /* DesktopLibraryViews.swift in Sources */,
+				47D68E86BA24F8E2DDCD1860 /* DesktopMovieView.swift in Sources */,
+				504F1057266BDFDDFBD4D4E2 /* DesktopPlayerView.swift in Sources */,
+				1487C30C4701B9047487D9A4 /* DesktopRootView.swift in Sources */,
+				E45CF6785F4E8EC75E832D9F /* DesktopSession.swift in Sources */,
+				381DBDE06F3355AC6FA5E6DD /* DesktopTheme.swift in Sources */,
+				97E5479098FF83306A0BE208 /* DownloadItem.swift in Sources */,
+				FBC9897A6BEC28CF156E5CC2 /* DownloadStore.swift in Sources */,
+				392329BA18721D052D05F996 /* FirestoreService.swift in Sources */,
+				E8A064C25395D19D55E621A8 /* Genre.swift in Sources */,
+				CA687854081838D59535586A /* HomeViewModel.swift in Sources */,
+				27ED2FDB7913B59BE7CEA1BA /* LibraryHistory.swift in Sources */,
+				F1165623FF60057068EA9CD3 /* LibraryStore.swift in Sources */,
+				009EDF5B44AAA1D8454F5D55 /* MirrorDesktopApp.swift in Sources */,
+				AEFA9826807DE2F3230EF953 /* Movie.swift in Sources */,
+				D47CA5FA122255A2DF374CF4 /* MovieDetail.swift in Sources */,
+				630DCE8A3C2E3A888CB79AEF /* MovieDetailViewModel.swift in Sources */,
+				54C871A1817DC69B2A7E3E30 /* MovieRepository.swift in Sources */,
+				A25F01A489EC0F99BE6FA4A8 /* OfflineDownload.swift in Sources */,
+				A924A1C63133CCE02EF2D06A /* PeopleMetadataService.swift in Sources */,
+				F8AAE06C7F5F38E394E2C64C /* Phosphor.swift in Sources */,
+				3639B5AE0FC54F85C25A5D55 /* PlaybackService.swift in Sources */,
+				90D7450AC61D463BCEEB4F55 /* SearchViewModel.swift in Sources */,
+				404C2901F37D0D2A8AC69A62 /* Subtitles.swift in Sources */,
+				4BB7A448B767EE2CDBCE0A12 /* Torrent.swift in Sources */,
+				0028AFE84831CA26BD0C8138 /* WatchHistoryItem.swift in Sources */,
+				7A37E4C33C36A321F5FDBE22 /* WatchHistorySync.swift in Sources */,
+				2CA72E6E944747EE8E9B8E92 /* WatchPreferences.swift in Sources */,
+				E9A912125B3308A6F1C85435 /* WatchlistItem.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		43298FA9E9D5B317FB30DF43 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9785B6AE740D96C2CA5F91EB /* DesktopAuthIntegrationTests.swift in Sources */,
+				789136D13610779B28250B63 /* DesktopPlaybackTests.swift in Sources */,
+				9971ACDCBF606910ABBBB616 /* OfflineDownloadTests.swift in Sources */,
+				A93A7FB4380EC372865153D1 /* WatchHistoryTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C3E61DC8E3965F94A5AE2AA6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3B3115BA200ADE77A1CA56DB /* MirrorDesktop */;
+			targetProxy = 6C37AF6194555F151E2BC061 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0B3087CEA55F466FA5CFCE5B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mirror.MirrorDesktopTests;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mirror.app/Contents/MacOS/Mirror";
+			};
+			name = Release;
+		};
+		19CDEB8689FA67AB67BAABC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5D46EA8540D9990206B6451D /* Base.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = MacAppIcon;
+				CODE_SIGN_ENTITLEMENTS = MirrorDesktop/MirrorDesktop.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = MirrorDesktop/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_MODULE_NAME = MirrorDesktop;
+				PRODUCT_NAME = Mirror;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		3A99DE854FFE033A715054F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.mirror.MirrorDesktopTests;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mirror.app/Contents/MacOS/Mirror";
+			};
+			name = Debug;
+		};
+		4589773F11EC2611A610DA2B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5D46EA8540D9990206B6451D /* Base.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = MacAppIcon;
+				CODE_SIGN_ENTITLEMENTS = MirrorDesktop/MirrorDesktop.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = MirrorDesktop/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_MODULE_NAME = MirrorDesktop;
+				PRODUCT_NAME = Mirror;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		5CF5D9A3C8FE87C25DE7AD8A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E56BD53EA9DE1EC9C1FA194D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		17A210CE8754823A3B40AEC2 /* Build configuration list for PBXNativeTarget "MirrorDesktop" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				19CDEB8689FA67AB67BAABC2 /* Debug */,
+				4589773F11EC2611A610DA2B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		62907EDAB7DBDEF2A37E7079 /* Build configuration list for PBXNativeTarget "MirrorDesktopTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A99DE854FFE033A715054F2 /* Debug */,
+				0B3087CEA55F466FA5CFCE5B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A9C1BC218408A0EB376B8277 /* Build configuration list for PBXProject "MirrorDesktop" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E56BD53EA9DE1EC9C1FA194D /* Debug */,
+				5CF5D9A3C8FE87C25DE7AD8A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6CE83A13069CC8750EA8BB2B /* XCRemoteSwiftPackageReference "Nuke" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kean/Nuke.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
+		F2B75A9ED147553E4EB18711 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		FCE43CD0C5D1A3010005E1C1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FCE43CD0C5D1A3010005E1C1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		6B6C648B316A1F31D8951580 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2B75A9ED147553E4EB18711 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		7F703283148C8B8340F22587 /* Nuke */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6CE83A13069CC8750EA8BB2B /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = Nuke;
+		};
+		9712D19DBB759BADF5F073F7 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FCE43CD0C5D1A3010005E1C1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		F33BB1D1CD8C78C7F68C1655 /* NukeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6CE83A13069CC8750EA8BB2B /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = NukeUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CA8F65EB9F23F8F926979897 /* Project object */;
+}
