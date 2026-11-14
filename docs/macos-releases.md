@@ -14,7 +14,7 @@ Tags named `macos-vMAJOR.MINOR.PATCH` are the version source of truth. The previ
 | New compatible features | `release:minor` | 1.3.0 |
 | Breaking changes | `release:major` | 2.0.0 |
 
-Set the label on the **develop → main PR before merging**. When multiple bump labels exist, the highest impact wins. This is an explicit reviewer decision, not a guess from commit text. Tag numbering is independent of iOS and server releases.
+Set the label on the **develop → main PR before merging**. Automatic releases consider all main promotions since the latest macOS release tag, and the highest impact wins. A cancelled or skipped release therefore does not lose an earlier minor or major label. For example, from 1.0.1, an unpublished minor promotion followed by a patch promotion produces one combined 1.1.0 release. If 1.1.0 had already published, the subsequent patch would instead produce 1.1.1. This is an explicit reviewer decision, not a guess from commit text. Tag numbering is independent of iOS and server releases. Manual patch/minor/major selection remains an explicit override.
 
 The workflow writes the semantic version into both `CFBundleShortVersionString` and `CFBundleVersion`. This keeps Sparkle's version comparison monotonic across automatic and manual workflows, whose run counters differ. Local development builds keep the default version in Base.xcconfig, with installation disabled to avoid replacing a developer's signed build. CI does not commit version bumps back to protected branches.
 

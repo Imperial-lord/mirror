@@ -4,6 +4,8 @@ import base64
 from pathlib import Path
 import plistlib
 import unittest
+import json
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('release', Path(__file__).with_name('macos-release-version.py'))
 release = importlib.util.module_from_spec(spec)
@@ -40,6 +42,38 @@ class ReleaseVersionTests(unittest.TestCase):
         for version in ['1.2', '01.2.3', '1.2.3;echo', '-1.2.3']:
             with self.assertRaises(ValueError): release.parts(version)
         with self.assertRaises(ValueError): release.plan({}, 'new', 'unknown')
+
+    def test_cancelled_minor_then_patch_keeps_minor_impact(self):
+        def promotion(commit, label, base='main'):
+            return dict(merged_at='2026-11-14', merge_commit_sha=commit,
+                        base=dict(ref=base, repo=dict(full_name='owner/mirror')),
+                        labels=[dict(name=label)])
+        with patch.object(release, 'output', side_effect=[
+            'minor-merge\npatch-merge',
+            json.dumps([[promotion('minor-merge', 'release:minor')]]),
+            json.dumps([[promotion('patch-merge', 'release:patch')]])
+        ]) as command:
+            bump = release.automatic_bump({'macos-v1.0.1': 'published'}, 'patch-merge', 'owner/mirror')
+        self.assertEqual(command.call_args_list[0].args,
+                         ('git', 'rev-list', '--first-parent', '--reverse', 'published..patch-merge'))
+        self.assertEqual(release.plan({'macos-v1.0.1': 'published'}, 'patch-merge', bump)['version'], '1.1.0')
+
+    def test_ignore_develop_and_unmerged_or_unrelated_associated_prs(self):
+        prs = [
+            dict(merged_at='date', merge_commit_sha='commit',
+                 base=dict(ref='develop', repo=dict(full_name='owner/mirror'))),
+            dict(merged_at=None, base=dict(ref='main')),
+            dict(merged_at='date', merge_commit_sha='another', base=dict(ref='main'))
+        ]
+        for pr in prs:
+            pr['labels'] = [dict(name='release:major')]
+        with patch.object(release, 'output', side_effect=['commit', json.dumps([prs])]):
+            self.assertEqual(release.automatic_bump({}, 'commit', 'owner/mirror'), 'patch')
+
+    def test_already_released_range_has_no_pending_impact(self):
+        with patch.object(release, 'output', return_value='') as command:
+            self.assertEqual(release.automatic_bump({'macos-v1.1.0': 'same'}, 'same', 'owner/mirror'), 'patch')
+        command.assert_called_once_with('git', 'rev-list', '--first-parent', '--reverse', 'same..same')
 
 
 class ReleaseConfigurationTests(unittest.TestCase):
