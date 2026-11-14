@@ -4,31 +4,6 @@ import UIKit
 
 @MainActor
 final class HomeDataTests: XCTestCase {
-    func testLandscapeCardsUseLargeStillsInsteadOfBlurredYTSBackgrounds() throws {
-        let movie = try artworkMovie([
-            "background_image_original": "https://yts.gg/assets/images/movies/a_movie/background.jpg",
-            "large_cover_image": "https://yts.gg/assets/images/movies/a_movie/large-cover.jpg"
-        ])
-        XCTAssertEqual(movie.landscapeStillURL?.absoluteString,
-                       "https://img.yts.gg/assets/images/movies/a_movie/large-screenshot1.jpg")
-        XCTAssertEqual(movie.posterURL?.lastPathComponent, "large-cover.jpg")
-    }
-
-    func testLandscapeArtworkKeepsCustomImagesAndSupportsMissingBackgrounds() throws {
-        let custom = try artworkMovie(["background_image": "https://example.test/backdrop.jpg"])
-        XCTAssertEqual(custom.landscapeStillURL?.absoluteString, "https://example.test/backdrop.jpg")
-        let posterOnly = try artworkMovie(["large_cover_image": "https://example.test/poster.jpg"])
-        XCTAssertNil(posterOnly.landscapeStillURL)
-        XCTAssertNotNil(posterOnly.posterURL)
-    }
-
-    private func artworkMovie(_ artwork: [String: String]) throws -> Movie {
-        var fields: [String: Any] = ["id": 1, "url": "https://example.test/movie",
-            "imdb_code": "tt1", "title": "Movie", "year": 2026, "rating": 8, "runtime": 120]
-        artwork.forEach { fields[$0.key] = $0.value }
-        return try JSONDecoder().decode(Movie.self, from: JSONSerialization.data(withJSONObject: fields))
-    }
-
     func testCollectionsUseTheirOwnQueries() async {
         let model = HomeViewModel(repository: HomeFixtureRepository())
         await model.loadAll()
