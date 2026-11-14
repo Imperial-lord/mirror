@@ -35,6 +35,7 @@ public final class AppState {
 @main
 struct MirrorApp: App {
     @UIApplicationDelegateAdaptor(MirrorAppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
     @State private var appState = AppState()
     @AppStorage("appThemeMode") private var themeMode = AppThemeMode.dark.rawValue
 
@@ -47,7 +48,13 @@ struct MirrorApp: App {
         WindowGroup {
             AppLaunchCoordinatorView()
                 .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
-                .task { DownloadStore.shared.start() }
+                .task {
+                    DownloadStore.shared.setProcessingActive(scenePhase != .background)
+                    DownloadStore.shared.start()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    DownloadStore.shared.setProcessingActive(phase != .background)
+                }
                 .environment(appState)
                 .preferredColorScheme((AppThemeMode(rawValue: themeMode) ?? .dark).colorScheme)
 

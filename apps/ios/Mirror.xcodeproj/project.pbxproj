@@ -37,6 +37,7 @@
 		3FC246BA64665270DF0DB811 /* GenresListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D0795B97B0BC5A956012BD /* GenresListView.swift */; };
 		410F30FEF73CC175F3003978 /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DC4E76E67E37CBB43E197A /* DownloadsView.swift */; };
 		415C7F1E78134E54407894FF /* ThemePaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60DFFB08F15A0FE6544525E0 /* ThemePaletteTests.swift */; };
+		493EC564D55DCE92FC075955 /* OfflineVideoOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D5837CC46066C04FC99A1E /* OfflineVideoOptimizer.swift */; };
 		4D19DAC233DD0C8D2082A046 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5F440D3E4910ACD310E98DF9 /* FirebaseAuth */; };
 		53065F14DCEA80D6465D41E6 /* GenreCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B01A31A54EB99825A84829C /* GenreCard.swift */; };
 		57579C88145AADD9C37D3660 /* PlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A01BA890A60318D71BE2F75 /* PlaybackService.swift */; };
@@ -210,6 +211,7 @@
 		CAEC56F55EFD2EEB61660CC3 /* Subtitles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subtitles.swift; sourceTree = "<group>"; };
 		CCC12F0D896498C5C5841B8C /* WatchHistorySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistorySync.swift; sourceTree = "<group>"; };
 		CEDF0EE85A5F1402E008E5EA /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		D1D5837CC46066C04FC99A1E /* OfflineVideoOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineVideoOptimizer.swift; sourceTree = "<group>"; };
 		D27CEAD1F685A7C061A0DA61 /* RecentLibraryContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentLibraryContent.swift; sourceTree = "<group>"; };
 		D61CC9C0A15C7D794DAA2632 /* MirrorLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorLogoView.swift; sourceTree = "<group>"; };
 		DE8B3EFEAF7C7A3AC0273BFC /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -463,6 +465,7 @@
 				759F7BCAC5F21FE148BA5469 /* DownloadStore.swift */,
 				94DC4E76E67E37CBB43E197A /* DownloadsView.swift */,
 				F07C9CA6937DA2911B8F9843 /* OfflineDownload.swift */,
+				D1D5837CC46066C04FC99A1E /* OfflineVideoOptimizer.swift */,
 			);
 			path = Downloads;
 			sourceTree = "<group>";
@@ -750,6 +753,7 @@
 				1DAEA58E7D7F26A177FB011E /* MovieRepository.swift in Sources */,
 				75080B897E039DEE54281E86 /* MovieRow.swift in Sources */,
 				5E2288BBFBC74C620E388BF9 /* OfflineDownload.swift in Sources */,
+				493EC564D55DCE92FC075955 /* OfflineVideoOptimizer.swift in Sources */,
 				2C7C68F311515E30BDA18ED8 /* OnboardingView.swift in Sources */,
 				608B7F8868B54742E199A175 /* PeopleMetadataService.swift in Sources */,
 				8154BC904222BA1910D37A18 /* PersonDetailView.swift in Sources */,

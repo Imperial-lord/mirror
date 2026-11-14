@@ -27,6 +27,7 @@
 		504F1057266BDFDDFBD4D4E2 /* DesktopPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */; };
 		508F7874BCB70FA34B107C3D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 9712D19DBB759BADF5F073F7 /* FirebaseAuth */; };
 		54C871A1817DC69B2A7E3E30 /* MovieRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A3AECA4AB85D92592C9F42E /* MovieRepository.swift */; };
+		57B7355C1A07345094209674 /* OfflineVideoOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17334846FA08717197590291 /* OfflineVideoOptimizer.swift */; };
 		630DCE8A3C2E3A888CB79AEF /* MovieDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0099147237E35E69858A24 /* MovieDetailViewModel.swift */; };
 		667B1D7B7A8BDBC838D27FE4 /* DesktopLibraryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */; };
 		6C4BE32B0DA839B5D0F6004A /* DesktopUpdateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C970CD8EFC8B70F82E6975C1 /* DesktopUpdateTests.swift */; };
@@ -87,6 +88,7 @@
 		0B8C69B72755230EE94B7F39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0C70B197320211391C2EE0DC /* DesktopAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopAuthView.swift; sourceTree = "<group>"; };
 		1445FC6CF516DCFC4BF6D771 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		17334846FA08717197590291 /* OfflineVideoOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineVideoOptimizer.swift; sourceTree = "<group>"; };
 		17F01FADCB5145F1E06A8399 /* APIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIResponse.swift; sourceTree = "<group>"; };
 		194122163B81A73CEEA27629 /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
 		1A3AECA4AB85D92592C9F42E /* MovieRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieRepository.swift; sourceTree = "<group>"; };
@@ -391,6 +393,7 @@
 			isa = PBXGroup;
 			children = (
 				AC45AFAB3A1078D78D06AA06 /* OfflineDownload.swift */,
+				17334846FA08717197590291 /* OfflineVideoOptimizer.swift */,
 			);
 			path = Downloads;
 			sourceTree = "<group>";
@@ -548,6 +551,7 @@
 				630DCE8A3C2E3A888CB79AEF /* MovieDetailViewModel.swift in Sources */,
 				54C871A1817DC69B2A7E3E30 /* MovieRepository.swift in Sources */,
 				A25F01A489EC0F99BE6FA4A8 /* OfflineDownload.swift in Sources */,
+				57B7355C1A07345094209674 /* OfflineVideoOptimizer.swift in Sources */,
 				A924A1C63133CCE02EF2D06A /* PeopleMetadataService.swift in Sources */,
 				F8AAE06C7F5F38E394E2C64C /* Phosphor.swift in Sources */,
 				3639B5AE0FC54F85C25A5D55 /* PlaybackService.swift in Sources */,

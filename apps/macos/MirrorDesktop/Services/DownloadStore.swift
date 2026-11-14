@@ -21,6 +21,8 @@ final class DownloadStore: NSObject {
   private var authHandle: AuthStateDidChangeListenerHandle?
   private var runningID: Int?
   private var preparation: Task<Void, Never>?
+  private var processingTask: Task<Void, Never>?
+  private let videoOptimizer: @MainActor (URL) async throws -> URL?
   private var networkTask: URLSessionDownloadTask?
   private var service: (any OfflineDownloadSource)?
   private var filesInUse: Set<URL> = []
@@ -37,8 +39,12 @@ final class DownloadStore: NSObject {
     storageDirectory: URL? = nil,
     accountProvider: @escaping () -> String? = { Auth.auth().currentUser?.uid },
     sourceFactory: @escaping @MainActor () -> any OfflineDownloadSource = { PlaybackService() },
-    transferConfiguration: (() -> URLSessionConfiguration)? = nil
+    transferConfiguration: (() -> URLSessionConfiguration)? = nil,
+    videoOptimizer: @escaping @MainActor (URL) async throws -> URL? = {
+      try await OfflineVideoOptimizer.optimize($0)
+    }
   ) {
+    self.videoOptimizer = videoOptimizer
     self.storageDirectory = storageDirectory
     self.accountProvider = accountProvider
     self.sourceFactory = sourceFactory
@@ -155,7 +161,7 @@ final class DownloadStore: NSObject {
             attached = true
           }
           for index in self.records.indices
-          where [.preparing, .downloading].contains(self.records[index].status)
+          where [.preparing, .downloading, .processing].contains(self.records[index].status)
             && self.records[index].id != self.runningID
           {
             self.records[index].status = .paused
@@ -336,6 +342,8 @@ final class DownloadStore: NSObject {
       request.httpMethod = "DELETE"
       URLSession.shared.dataTask(with: request).resume()
     }
+    processingTask?.cancel()
+    processingTask = nil
     preparation?.cancel()
     preparation = nil
     networkTask?.cancel()
@@ -545,6 +553,57 @@ final class DownloadStore: NSObject {
     }
   }
   private func finish(_ ticket: TransferTicket) {
+    guard let i = current(ticket), let asset = records[i].asset else { return }
+    guard asset.processingFinished != true else {
+      markCompleted(ticket)
+      return
+    }
+    // All source bytes are local now. Release OCI before starting the encoder.
+    service?.close()
+    service = nil
+    networkTask = nil
+    records[i].streamURL = nil
+    records[i].status = .processing
+    do { try persist() } catch {
+      fail(ticket, message: "Couldn’t save download information.")
+      return
+    }
+    processingTask = Task { @MainActor in
+      var converted: URL?
+      defer { if let converted { try? FileManager.default.removeItem(at: converted) } }
+      do {
+        let folder = try directory(ticket.movieID)
+        let original = folder.appendingPathComponent(asset.file)
+        converted = try await videoOptimizer(original)
+        try Task.checkCancellation()
+        guard let i = current(ticket), records[i].asset?.file == asset.file else { return }
+        var replacement = asset
+        replacement.processingFinished = true
+        if let converted {
+          let size = Int64(try converted.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0)
+          guard size > 0, size < asset.size, converted != original,
+            converted.deletingLastPathComponent() == folder
+          else { throw OfflineVideoOptimizer.Failure.invalidVideo }
+          replacement = .init(
+            file: converted.lastPathComponent, quality: asset.quality,
+            hash: asset.hash, size: size, processingFinished: true)
+        }
+        records[i].asset = replacement
+        do { try persist() } catch {
+          records[i].asset = asset
+          throw error
+        }
+        if converted != nil {
+          converted = nil
+          retireFile(original)
+        }
+        markCompleted(ticket)
+      } catch is CancellationError {} catch {
+        fail(ticket, message: "Couldn’t process this download. Tap Retry to try again.")
+      }
+    }
+  }
+  private func markCompleted(_ ticket: TransferTicket) {
     guard let i = current(ticket) else { return }
     records[i].status = .completed
     records[i].failure = nil
