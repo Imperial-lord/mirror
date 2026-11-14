@@ -48,7 +48,7 @@ Captured from the running native Mac app and the iPhone 17 simulator. See [scree
 
 ## Getting started
 
-For macOS 14+, download the latest portable ZIP from [GitHub Releases](https://github.com/Imperial-lord/mirror/releases). Extract it and move Mirror.app into Applications. These experimental builds are ad-hoc signed; macOS may require **Privacy & Security → Open Anyway**. Updates are installed by replacing the app, keeping its data. Developer ID notarization and an in-app updater are not configured. See [release and versioning notes](docs/macos-releases.md).
+For macOS 14+, download the latest portable ZIP from [GitHub Releases](https://github.com/Imperial-lord/mirror/releases). Extract it and move Mirror.app into Applications. These experimental builds are ad-hoc signed; macOS may require **Privacy & Security → Open Anyway**. Updater-enabled builds check GitHub periodically and offer **Download update → Restart and update** in Settings, preserving app data. Older builds need the first updater-enabled version installed manually. Developer ID notarization is not configured. See [release and versioning notes](docs/macos-releases.md).
 
 To build locally:
 
@@ -120,7 +120,7 @@ CI checks both apps in Debug and Release, runs client/server tests and a Docker 
 - **`develop`** is the integration branch and repository default. Target everyday feature/fix PRs here.
 - **`main`** receives reviewed promotions from `develop`. Security, server, iOS, macOS, and promotion checks must pass; branches must be up to date and conversations resolved. Force pushes, branch deletion, and administrator bypasses are disabled.
 
-Successful main CI runs publish a macOS-only release. Patch bumps are the default; label the promotion PR `release:minor` or `release:major` to choose a different bump. The release workflow also offers a manual version-bump selector. See [macOS releases](docs/macos-releases.md).
+After main checks pass and the release environment is approved, CI publishes a macOS-only release. Patch bumps are the default; label the promotion PR `release:minor` or `release:major` to choose a different bump. The release workflow also offers a manual version-bump selector. See [macOS releases](docs/macos-releases.md).
 
 Use merge commits for promotions, then merge `main` back into `develop` to preserve branch history. See [SECURITY.md](SECURITY.md) for configuration handling. Optional Debug-only auth autofill uses local scheme environment variables; never commit credentials to a shared scheme.
 
@@ -129,3 +129,5 @@ Use merge commits for promotions, then merge `main` back into `develop` to prese
 Design inspiration: [Online Cinema App — Mirror by Sasha Dobrynina](https://www.behance.net/gallery/211500071/Online-Cinema-App-Mirror). Interface icons: [Phosphor](docs/icon-system.md), used under its [MIT license](docs/licenses/Phosphor-MIT.txt). Catalog and person metadata use YTS and Wikimedia/Wikidata. Movie artwork shown in screenshots belongs to its respective owners.
 
 Project license: [MIT](LICENSE).
+
+macOS updates use [Sparkle](https://sparkle-project.org/) under its MIT license. Releases include Sparkle's license alongside the existing dependency notices.

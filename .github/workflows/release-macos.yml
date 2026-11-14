@@ -1,9 +1,10 @@
 name: Release macOS
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+  workflow_call:
+    inputs:
+      bump:
+        type: string
+        default: auto
   workflow_dispatch:
     inputs:
       bump:
@@ -20,14 +21,11 @@ concurrency:
 jobs:
   release:
     if: >-
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
-       github.event.workflow_run.head_branch == 'main' &&
-       github.event.workflow_run.head_repository.full_name == github.repository) ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: macos-15
     timeout-minutes: 45
+    environment: macos-release
     permissions:
       contents: write
       actions: read
@@ -37,26 +35,29 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - name: Verify checked main commit and CI gate
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          RELEASE_SHA: ${{ github.sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
           git merge-base --is-ancestor "$RELEASE_SHA" origin/main
           if [ "$EVENT" = workflow_dispatch ]; then
-            gh run list --workflow ci.yml --branch main --commit "$RELEASE_SHA" \
-              --event push --status success --json databaseId --jq 'length > 0' | grep -qx true
+            run_id=$(gh run list --workflow ci.yml --branch main --commit "$RELEASE_SHA" \
+              --event push --limit 1 --json databaseId --jq '.[0].databaseId')
+            test -n "$run_id" && test "$run_id" != null
+            gh run view "$run_id" --json jobs --jq \
+              '[.jobs[] | select(.name == "Security" or .name == "Server tests" or .name == "iOS build and tests" or .name == "macOS build and tests" or .name == "Develop to main")] | length == 5 and all(.[]; .conclusion == "success")' | grep -qx true
           fi
       - name: Plan version
         id: version
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          RELEASE_SHA: ${{ github.sha }}
           BUMP: ${{ inputs.bump || 'auto' }}
         run: python3 scripts/macos-release-version.py --sha "$RELEASE_SHA" --bump "$BUMP"
       - name: Already published
@@ -78,13 +79,13 @@ jobs:
         if: steps.version.outputs.skip != 'true'
         env:
           MIRROR_RELEASE_VERSION: ${{ steps.version.outputs.version }}
-          MIRROR_RELEASE_BUILD: ${{ github.run_number }}
+          MIRROR_RELEASE_BUILD: ${{ steps.version.outputs.version }}
         run: bash scripts/build-macos-adhoc.sh build > macos-release.log 2>&1
       - name: Verify version and prepare assets
         if: steps.version.outputs.skip != 'true'
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
-          RELEASE_BUILD: ${{ github.run_number }}
+          RELEASE_BUILD: ${{ steps.version.outputs.version }}
         run: |
           python3 - <<'PY'
           import os, plistlib
@@ -96,19 +97,26 @@ jobs:
           cd build/macos-adhoc
           mv Mirror-macOS-adhoc.zip "Mirror-macOS-$RELEASE_VERSION.zip"
           shasum -a 256 "Mirror-macOS-$RELEASE_VERSION.zip" > SHA256SUMS
+      - name: Sign the update archive and feed
+        if: steps.version.outputs.skip != 'true'
+        env:
+          MACOS_UPDATE_SIGNING_KEY: ${{ secrets.MACOS_UPDATE_SIGNING_KEY }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: bash scripts/sign-macos-update.sh
       - name: Publish complete release
         if: steps.version.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          RELEASE_SHA: ${{ github.sha }}
           DRAFT_EXISTS: ${{ steps.version.outputs.draft_exists }}
         run: |
           cat > /tmp/mirror-release-notes.md <<'EOF'
           Mirror for macOS 14 or newer — Apple silicon and Intel.
 
-          Download the ZIP, extract it and move Mirror.app to Applications. To update, quit Mirror and replace the app; keep your application data. Updates are manual.
+          Download the ZIP, extract it and move Mirror.app to Applications. This version adds signed in-app updates in Settings: download an update, then choose Restart and update. Older builds need this first updater-enabled version installed manually. Application data is retained.
 
           This experimental build is ad-hoc signed and is not Apple-notarized. macOS may require System Settings → Privacy & Security → Open Anyway. No Apple Developer membership is needed to install it. Sign into your own Mirror account; playback requires an internet connection and service availability.
 
@@ -120,7 +128,7 @@ jobs:
               --notes-file /tmp/mirror-release-notes.md
           fi
           gh release upload "$RELEASE_TAG" "build/macos-adhoc/Mirror-macOS-$RELEASE_VERSION.zip" \
-            build/macos-adhoc/SHA256SUMS --clobber
+            build/macos-adhoc/SHA256SUMS build/macos-adhoc/update-feed/appcast.xml --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest
       - name: Print build failures
         if: failure()

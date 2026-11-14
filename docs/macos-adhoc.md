@@ -1,6 +1,6 @@
 # Portable macOS build
 
-This opt-in build is for sharing Mirror directly with trusted friends. It supports macOS 14 or newer on Apple silicon and Intel. It is ad-hoc signed, without an Apple-verified publisher identity, notarization, a development provisioning profile, or a paid Apple account. [GitHub Releases](macos-releases.md) automate packaging and versioning; installing updates remains manual.
+This opt-in build is for sharing Mirror directly with trusted friends. It supports macOS 14 or newer on Apple silicon and Intel. It is ad-hoc signed, without an Apple-verified publisher identity, notarization, a development provisioning profile, or a paid Apple account. [GitHub Releases](macos-releases.md) automate packaging/versioning and provide signed updates through Settings. The first updater-enabled release must be installed manually over older versions.
 
 ## Build and test
 
@@ -45,6 +45,6 @@ Share the ZIP through a trusted channel and supply the checksum separately when 
 
 Do not disable Gatekeeper or other system protections. See [Apple's instructions for opening an app from an unidentified developer](https://support.apple.com/en-us/102445).
 
-For manual updates, quit Mirror and replace the app with the new copy. Do not delete its application data or Keychain entries. Keep a backup of any local downloads that matter.
+For manual updates, quit Mirror and replace the app with the new copy. For in-app updates, use Settings → Download update → Restart and update. Do not delete application data or Keychain entries. Keep a backup of any local downloads that matter.
 
 Developer ID signing and notarization require the paid Apple Developer Program; a free Personal Team cannot issue a Developer ID certificate. This build is an experimental alternative, not equivalent to notarized distribution. See [Apple Developer Program capabilities](https://developer.apple.com/programs/whats-included/).

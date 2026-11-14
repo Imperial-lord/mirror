@@ -12,7 +12,7 @@ Native SwiftUI/AppKit app for macOS 14+, with its own desktop UI and a separatel
 
 Firebase Authentication uses the macOS Data Protection keychain. The app must be signed with the checked-in entitlements; a development identity and matching provisioning profile are required for a normal local build. Xcode can manage these automatically. Do not remove keychain entitlements to bypass a signing error. CI uses ad-hoc signing without protected keychain entitlements and skips authentication integration tests; run the full signed local suite to verify authentication persistence.
 
-Credentials, Firebase client configuration, signing overrides, and generated app bundles remain ignored by Git. Developer ID signing, notarization, and in-app automatic updates are not configured. The [macOS release workflow](../../docs/macos-releases.md) publishes versioned portable ZIPs after successful main CI.
+Credentials, Firebase client configuration, signing overrides, and generated app bundles remain ignored by Git. Developer ID signing and notarization are not configured. The [macOS release workflow](../../docs/macos-releases.md) publishes versioned portable ZIPs and signed Sparkle feeds after main checks pass and the owner approves the release environment. Release builds offer periodic checks, downloads and restart/install in Settings; local development builds disable installation.
 
 For experimental sharing without a paid Apple account, see [the opt-in portable build](../../docs/macos-adhoc.md). It uses a separate dependency copy with explicit login-Keychain compatibility changes. Simply removing entitlements from the normal build does not provide working authentication.
 

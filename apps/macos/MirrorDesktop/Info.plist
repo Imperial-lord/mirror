@@ -2,6 +2,24 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SUFeedURL</key>
+	<string>https://github.com/Imperial-lord/mirror/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>OM+33LEv3m0sN6BXBQn/3YOd9+aZAKiPqg/PWp51wSs=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>21600</integer>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUSendProfileInfo</key>
+	<false/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>MirrorPortableBuild</key>
+	<string>$(MIRROR_PORTABLE_BUILD)</string>
 	<key>CFBundleName</key>
 	<string>Mirror</string>
 	<key>CFBundleDisplayName</key>

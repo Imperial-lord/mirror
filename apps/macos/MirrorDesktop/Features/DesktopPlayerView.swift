@@ -223,6 +223,9 @@ import SwiftUI
   func toggleMute() {
     setVolume(volume > 0 ? 0 : volumeBeforeMute)
   }
+  var volumeIcon: PhosphorIcon {
+    volume == 0 ? .speakerNone : (volume <= 0.5 ? .speakerLow : .speakerHigh)
+  }
   func setSubtitle(_ code: String) {
     subtitleTask?.cancel()
     subtitle = code
@@ -558,22 +561,23 @@ struct DesktopPlayerView: View {
                   model.seek(scrubPosition)
                   reveal()
                 }
-              }.tint(.white).help("Seek")
+              }.controlSize(.mini).tint(.white).help("Seek")
               Text(time(model.duration)).monospacedDigit().frame(width: 65)
             }.font(.system(size: 12))
             HStack(spacing: 14) {
-              playerButton(
-                model.volume == 0
-                  ? .speakerMuted : (model.volume < 0.5 ? .speakerLow : .speakerHigh),
-                model.volume == 0 ? "Unmute" : "Mute"
-              ) {
+              Button {
                 model.toggleMute()
                 reveal()
-              }
+              } label: {
+                PhosphorView(model.volumeIcon, size: 17, color: .white)
+                  .frame(width: 28, height: 28).contentShape(Rectangle())
+              }.buttonStyle(.plain).help(model.volume == 0 ? "Unmute" : "Mute")
+                .accessibilityLabel(model.volume == 0 ? "Unmute" : "Mute")
               Slider(
                 value: Binding(get: { Double(model.volume) }, set: { model.setVolume(Float($0)) }),
                 in: 0...1
-              ).frame(width: 100).tint(.white).help("Volume").accessibilityLabel("Volume")
+              ).controlSize(.mini).frame(width: 76).tint(.white)
+                .help("Volume").accessibilityLabel("Volume")
               Spacer()
               if model.actualSubtitle != "off" {
                 Text(SubtitleLanguage.name(model.actualSubtitle)).font(.caption).foregroundStyle(

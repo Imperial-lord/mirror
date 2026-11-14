@@ -34,6 +34,13 @@ enum DesktopTheme: String, CaseIterable {
   var scheme: ColorScheme? { self == .system ? nil : self == .dark ? .dark : .light }
 }
 
+struct DesktopWordmark: View {
+  let size: CGFloat
+  var body: some View {
+    Text("mirror").font(.system(size: size, weight: .bold))
+  }
+}
+
 struct DesktopImage: View {
   let url: URL?
   var cover = true
@@ -44,6 +51,7 @@ struct DesktopImage: View {
           image.resizable().aspectRatio(contentMode: cover ? .fill : .fit)
             .frame(width: box.size.width, height: box.size.height)
             .clipped()
+            .contentShape(Rectangle())
         } else {
           Color.mirrorSurface2.overlay {
             if state.isLoading {
@@ -56,6 +64,7 @@ struct DesktopImage: View {
       }
     }
     .clipped()
+    .contentShape(Rectangle())
     .accessibilityHidden(true)
   }
 }
