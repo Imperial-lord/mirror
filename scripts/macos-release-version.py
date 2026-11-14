@@ -46,6 +46,27 @@ def output(*args):
     return subprocess.check_output(args, text=True).strip()
 
 
+def automatic_bump(tags, sha, repository):
+    valid = [tag for tag in tags if tag.startswith(PREFIX)
+             and VERSION.fullmatch(tag[len(PREFIX):])]
+    latest = max(valid, key=lambda tag: parts(tag[len(PREFIX):])) if valid else None
+    revision = f'{tags[latest]}..{sha}' if latest else sha
+    # Walk main's promotions, not the individual develop/dependency commits
+    # brought in by each promotion. A cancelled release must not lose its label.
+    commits = output('git', 'rev-list', '--first-parent', '--reverse', revision).splitlines()
+    labels = set()
+    for commit in commits:
+        pages = json.loads(output('gh', 'api', '--paginate', '--slurp',
+                                 f'repos/{repository}/commits/{commit}/pulls?per_page=100'))
+        for pulls in pages:
+            for pr in pulls:
+                if (pr.get('merged_at') and pr['base']['ref'] == 'main'
+                        and pr.get('merge_commit_sha') == commit
+                        and pr['base']['repo']['full_name'] == repository):
+                    labels.update(label['name'] for label in pr['labels'])
+    return bump_kind(labels)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sha', required=True)
@@ -64,10 +85,7 @@ def main():
             raise SystemExit('Refusing to publish code older than or unrelated to the latest macOS tag.')
     bump = args.bump
     if bump == 'auto':
-        pulls = json.loads(output('gh', 'api', f'repos/{os.environ["GITHUB_REPOSITORY"]}/commits/{sha}/pulls'))
-        labels = {label['name'] for pr in pulls if pr.get('merged_at') and pr['base']['ref'] == 'main'
-                  for label in pr['labels']}
-        bump = bump_kind(labels)
+        bump = automatic_bump(tags, sha, os.environ['GITHUB_REPOSITORY'])
     result = plan(tags, sha, bump)
     # Never re-publish or replace assets of a published release for the same commit.
     release = subprocess.run(['gh', 'release', 'view', result['tag'], '--json', 'isDraft,targetCommitish'],
