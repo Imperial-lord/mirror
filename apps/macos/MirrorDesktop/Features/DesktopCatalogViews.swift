@@ -63,12 +63,29 @@ struct DesktopMovieRow: View {
 }
 
 struct DesktopHomeView: View {
+  @Environment(\.scenePhase) private var scenePhase
   @Environment(DesktopSession.self) private var session
   @Environment(\.modelContext) private var context
   @Query(sort: \WatchHistoryItem.lastWatched, order: .reverse) private var history:
     [WatchHistoryItem]
   @State private var model = HomeViewModel()
   @State private var heroIndex = 0
+  @State private var heroVisible = false
+  @State private var usingHeroControls = false
+  @State private var heroInteraction = 0
+  private var selectedHeroIndex: Int {
+    model.heroMovies.isEmpty ? 0 : heroIndex % model.heroMovies.count
+  }
+  private var canRotateHero: Bool {
+    heroVisible && model.heroMovies.count > 1 && !model.isLoading && model.errorMessage == nil
+      && scenePhase == .active && session.section == .home && session.path.isEmpty
+      && session.playback == nil && !session.showProfiles && !session.showSignIn
+      && !usingHeroControls
+  }
+  private var heroRotationKey: String {
+    "\(canRotateHero)-\(heroIndex)-\(heroInteraction)-"
+      + model.heroMovies.map { String($0.id) }.joined(separator: ",")
+  }
   private var userHistory: [WatchHistoryItem] {
     history.filter { $0.userId == AuthService.shared.currentUser?.uid }
   }
@@ -92,7 +109,12 @@ struct DesktopHomeView: View {
         } else if let error = model.errorMessage {
           DesktopError(message: error) { Task { await model.loadAll() } }
         } else if !model.heroMovies.isEmpty {
-          hero(model.heroMovies[heroIndex % model.heroMovies.count])
+          ZStack {
+            let movie = model.heroMovies[selectedHeroIndex]
+            hero(movie).id(movie.id).transition(.opacity)
+          }
+          .onAppear { heroVisible = true }
+          .onDisappear { heroVisible = false }
         }
         if !userHistory.filter(\.isInProgress).isEmpty {
           DesktopContinueRow(items: Array(userHistory.filter(\.isInProgress).prefix(10)))
@@ -121,6 +143,14 @@ struct DesktopHomeView: View {
         }
       }.padding(.horizontal, 38).padding(.bottom, 45)
     }.scrollIndicators(.hidden).background(Color.mirrorBackground)
+      .task(id: heroRotationKey) {
+        guard canRotateHero else { return }
+        do { try await Task.sleep(for: .seconds(7)) } catch { return }
+        guard !Task.isCancelled, canRotateHero else { return }
+        withAnimation(.easeInOut(duration: 0.45)) {
+          heroIndex = (selectedHeroIndex + 1) % model.heroMovies.count
+        }
+      }
       .task {
         if model.heroMovies.isEmpty { await model.loadAll() }
         await model.personalize(history: userHistory.map(WatchPreference.init))
@@ -177,19 +207,21 @@ struct DesktopHomeView: View {
               .white.opacity(0.13), in: Capsule())
           }.buttonStyle(.plain)
         }.padding(.top, 4)
+          .onHover { usingHeroControls = $0 }
       }.padding(35).foregroundStyle(.white)
     }.frame(height: 440).clipShape(RoundedRectangle(cornerRadius: 22))
       .overlay(alignment: .bottomTrailing) {
         HStack(spacing: 8) {
           ForEach(model.heroMovies.indices, id: \.self) { index in
             Button {
-              withAnimation { heroIndex = index }
+              heroInteraction += 1
+              withAnimation(.easeInOut(duration: 0.45)) { heroIndex = index }
             } label: {
-              Capsule().fill(.white.opacity(index == heroIndex ? 1 : 0.35)).frame(
-                width: index == heroIndex ? 23 : 6, height: 6)
+              Capsule().fill(.white.opacity(index == selectedHeroIndex ? 1 : 0.35)).frame(
+                width: index == selectedHeroIndex ? 23 : 6, height: 6)
             }.buttonStyle(.plain).help("Featured movie \(index+1)")
           }
-        }.padding(26)
+        }.padding(26).onHover { usingHeroControls = $0 }
       }
   }
 }

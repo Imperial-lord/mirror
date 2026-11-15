@@ -30,6 +30,7 @@ struct DesktopRootView: View {
     .background(Color.mirrorBackground).foregroundStyle(Color.mirrorInk)
     .tint(Color.mirrorInk)
     .toolbar(.visible, for: .windowToolbar)
+    .toolbarBackground(.hidden, for: .windowToolbar)
     .task {
       LibraryStore.shared.start()
       DownloadStore.shared.start()

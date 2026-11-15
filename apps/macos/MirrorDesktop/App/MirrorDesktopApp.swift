@@ -39,7 +39,7 @@ struct MirrorDesktopApp: App {
       .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
     }
     .defaultSize(width: 1380, height: 900)
-    .windowStyle(.titleBar)
+    .windowStyle(.hiddenTitleBar)
     .windowResizability(.contentMinSize)
     .modelContainer(
       for: [WatchHistoryItem.self, WatchlistItem.self, DownloadItem.self], inMemory: Self.isTesting
