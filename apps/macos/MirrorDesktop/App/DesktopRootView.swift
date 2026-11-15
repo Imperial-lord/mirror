@@ -29,6 +29,7 @@ struct DesktopRootView: View {
     }
     .background(Color.mirrorBackground).foregroundStyle(Color.mirrorInk)
     .tint(Color.mirrorInk)
+    .toolbar(.visible, for: .windowToolbar)
     .task {
       LibraryStore.shared.start()
       DownloadStore.shared.start()
@@ -84,11 +85,11 @@ struct DesktopRootView: View {
             case .person(let person): DesktopPersonView(person: person)
             case .collection(let title, let ids): DesktopCollectionView(title: title, ids: ids)
             }
-          }.toolbar(.hidden, for: .windowToolbar)
+          }.navigationBarBackButtonHidden()
         }
-        .toolbar(.hidden, for: .windowToolbar)
+        .navigationBarBackButtonHidden()
       }
-      .toolbar(.hidden, for: .windowToolbar)
+      .navigationBarBackButtonHidden()
     }
   }
   private var sidebar: some View {
