@@ -410,6 +410,13 @@ struct DesktopPlayerView: View {
     controls || model.showsLoadingIndicator || !model.playing || model.failure != nil
   }
   var body: some View {
+    playbackEvents
+      .task { startPlayback() }
+      .onDisappear { stopPlayback() }
+  }
+  // Keep the rendering and event chains separate so older supported Xcode
+  // compilers can type-check each opaque view independently.
+  private var playerContent: some View {
     ZStack {
       Color.black
       DesktopVideoSurface(player: model.player, onReadyForDisplay: { model.hasReadyFrame = $0 })
@@ -443,6 +450,9 @@ struct DesktopPlayerView: View {
           .allowsHitTesting(false)
       }
     }.foregroundStyle(.white).ignoresSafeArea().background(.black)
+  }
+  private var pointerEvents: some View {
+    playerContent
       .navigationBarBackButtonHidden()
       .onContinuousHover { phase in
         switch phase {
@@ -457,6 +467,9 @@ struct DesktopPlayerView: View {
       .onChange(of: showsChrome) { _, _ in updateCursor() }
       .onChange(of: settings) { _, _ in reveal() }
       .onChange(of: scrubbing) { _, _ in reveal() }
+  }
+  private var focusEvents: some View {
+    pointerEvents
       .onReceive(
         NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
       ) { _ in
@@ -485,6 +498,9 @@ struct DesktopPlayerView: View {
           close()
         }
       }
+  }
+  private var playbackEvents: some View {
+    focusEvents
       .onReceive(NotificationCenter.default.publisher(for: .mirrorPlayPause)) { _ in
         model.toggle()
         reveal()
@@ -515,43 +531,43 @@ struct DesktopPlayerView: View {
       .onChange(of: model.playing) { _, _ in reveal() }
       .onChange(of: model.buffering) { _, _ in reveal() }
       .onChange(of: model.showsLoadingIndicator) { _, _ in reveal() }
-      .task {
-        guard let request = session.playback else { return }
-        model.checkpoint = { position, duration in
-          WatchHistorySync.saveLocal(
-            context: context, movie: request.movie, position: position, duration: duration)
-          FirestoreService.shared.savePlaybackProgress(
-            movieId: request.movie.id, title: request.movie.title,
-            posterURL: request.movie.posterURL?.absoluteString, positionSeconds: position,
-            durationSeconds: duration, year: request.movie.year, genres: request.movie.genres ?? [],
-            backdropURL: request.movie.backdropURL?.absoluteString)
-          if request.offline != nil {
-            DownloadStore.shared.updatePlayback(
-              id: request.movie.id, position: position, duration: duration)
-          }
-        }
-        model.start(request)
-        window = NSApp.keyWindow ?? NSApp.windows.first
-        isFullscreen = window?.styleMask.contains(.fullScreen) == true
-        previousTitleVisibility = window?.titleVisibility ?? .visible
-        previousTitlebarTransparent = window?.titlebarAppearsTransparent ?? false
-        window?.titleVisibility = .hidden
-        window?.titlebarAppearsTransparent = true
-        if window?.styleMask.contains(.fullScreen) == false {
-          enteredFullscreen = true
-          window?.toggleFullScreen(nil)
-        }
+  }
+  private func startPlayback() {
+    guard let request = session.playback else { return }
+    model.checkpoint = { position, duration in
+      WatchHistorySync.saveLocal(
+        context: context, movie: request.movie, position: position, duration: duration)
+      FirestoreService.shared.savePlaybackProgress(
+        movieId: request.movie.id, title: request.movie.title,
+        posterURL: request.movie.posterURL?.absoluteString, positionSeconds: position,
+        durationSeconds: duration, year: request.movie.year, genres: request.movie.genres ?? [],
+        backdropURL: request.movie.backdropURL?.absoluteString)
+      if request.offline != nil {
+        DownloadStore.shared.updatePlayback(
+          id: request.movie.id, position: position, duration: duration)
       }
-      .onDisappear {
-        hideTask?.cancel()
-        cursor.restore()
-        model.stop()
-        window?.titleVisibility = previousTitleVisibility
-        window?.titlebarAppearsTransparent = previousTitlebarTransparent
-        if enteredFullscreen, window?.styleMask.contains(.fullScreen) == true {
-          window?.toggleFullScreen(nil)
-        }
-      }
+    }
+    model.start(request)
+    window = NSApp.keyWindow ?? NSApp.windows.first
+    isFullscreen = window?.styleMask.contains(.fullScreen) == true
+    previousTitleVisibility = window?.titleVisibility ?? .visible
+    previousTitlebarTransparent = window?.titlebarAppearsTransparent ?? false
+    window?.titleVisibility = .hidden
+    window?.titlebarAppearsTransparent = true
+    if window?.styleMask.contains(.fullScreen) == false {
+      enteredFullscreen = true
+      window?.toggleFullScreen(nil)
+    }
+  }
+  private func stopPlayback() {
+    hideTask?.cancel()
+    cursor.restore()
+    model.stop()
+    window?.titleVisibility = previousTitleVisibility
+    window?.titlebarAppearsTransparent = previousTitlebarTransparent
+    if enteredFullscreen, window?.styleMask.contains(.fullScreen) == true {
+      window?.toggleFullScreen(nil)
+    }
   }
   private var chrome: some View {
     ZStack {
