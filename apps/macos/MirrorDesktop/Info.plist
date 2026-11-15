@@ -40,6 +40,8 @@
 	<string>NSApplication</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>AISearchServiceURL</key>
+	<string>$(AI_SEARCH_SERVICE_URL)</string>
 	<key>PlaybackServiceURL</key>
 	<string>$(PLAYBACK_SERVICE_URL)</string>
 	<key>NSAppTransportSecurity</key>

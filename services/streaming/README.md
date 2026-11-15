@@ -2,6 +2,10 @@
 
 Node 22+, WebTorrent 3.0.21 (pinned), HTTP byte-range delivery to AVPlayer.
 
+The optional macOS [AI search prototype](../../docs/ai-search.md) uses
+`GROQ_API_KEY` on this backend. Its authenticated `POST /v1/ai/search` endpoint
+returns catalogue-verified movie recommendations; the key is never shipped in the app.
+
 ## Local
 
 ```
