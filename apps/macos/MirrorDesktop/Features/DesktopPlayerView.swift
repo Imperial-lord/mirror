@@ -147,7 +147,9 @@ import SwiftUI
                   toleranceBefore: CMTime(seconds: 0.3, preferredTimescale: 600),
                   toleranceAfter: CMTime(seconds: 0.3, preferredTimescale: 600))
               }
-              guard self.generation == token, self.seekGeneration == initialSeekToken else { return }
+              guard self.generation == token, self.seekGeneration == initialSeekToken else {
+                return
+              }
               self.seeking = false
               if self.wantsPlay { self.player.playImmediately(atRate: self.rate) }
             }
@@ -370,6 +372,24 @@ private struct DesktopPlaybackSpinner: View {
   }
 }
 
+/// AppKit restores this cursor on mouse movement. Explicit restoration also
+/// covers keyboard actions, focus changes and dismissal without mouse movement.
+@MainActor
+final class DesktopPlayerCursor {
+  private(set) var hidden = false
+  private let setHidden: (Bool) -> Void
+  init(setHidden: @escaping (Bool) -> Void = { NSCursor.setHiddenUntilMouseMoves($0) }) {
+    self.setHidden = setHidden
+  }
+  func update(controlsVisible: Bool, pointerInside: Bool, activeWindow: Bool) {
+    let shouldHide = !controlsVisible && pointerInside && activeWindow
+    guard shouldHide != hidden else { return }
+    hidden = shouldHide
+    setHidden(shouldHide)
+  }
+  func restore() { update(controlsVisible: true, pointerInside: false, activeWindow: false) }
+}
+
 struct DesktopPlayerView: View {
   @Environment(DesktopSession.self) private var session
   @Environment(\.modelContext) private var context
@@ -382,12 +402,32 @@ struct DesktopPlayerView: View {
   @State private var scrubbing = false
   @State private var scrubPosition: Double = 0
   @State private var window: NSWindow?
+  @State private var pointerInside = false
+  @State private var cursor = DesktopPlayerCursor()
+  @State private var previousTitleVisibility: NSWindow.TitleVisibility = .visible
+  @State private var previousTitlebarTransparent = false
+  private var showsChrome: Bool {
+    controls || model.showsLoadingIndicator || !model.playing || model.failure != nil
+  }
   var body: some View {
+    playbackEvents
+      .task { startPlayback() }
+      .onDisappear { stopPlayback() }
+  }
+  // Keep the rendering and event chains separate so older supported Xcode
+  // compilers can type-check each opaque view independently.
+  private var playerContent: some View {
     ZStack {
       Color.black
       DesktopVideoSurface(player: model.player, onReadyForDisplay: { model.hasReadyFrame = $0 })
-        .onTapGesture { if model.playing { controls.toggle() } else { reveal() } }
-        .onContinuousHover { _ in reveal() }
+        .onTapGesture {
+          if model.playing && controls {
+            hideTask?.cancel()
+            controls = false
+          } else {
+            reveal()
+          }
+        }
       if !model.caption.isEmpty {
         VStack {
           Spacer()
@@ -401,7 +441,7 @@ struct DesktopPlayerView: View {
             .frame(maxWidth: 850)
         }.padding(.bottom, controls ? 144 : 55).padding(.horizontal, 65).allowsHitTesting(false)
       }
-      if controls || model.showsLoadingIndicator || !model.playing || model.failure != nil {
+      if showsChrome {
         chrome.transition(.opacity)
       }
       if model.showsLoadingIndicator {
@@ -410,8 +450,45 @@ struct DesktopPlayerView: View {
           .allowsHitTesting(false)
       }
     }.foregroundStyle(.white).ignoresSafeArea().background(.black)
-      .toolbar(.hidden, for: .windowToolbar)
-      .onContinuousHover { _ in reveal() }
+  }
+  private var pointerEvents: some View {
+    playerContent
+      .navigationBarBackButtonHidden()
+      .onContinuousHover { phase in
+        switch phase {
+        case .active:
+          pointerInside = true
+          reveal()
+        case .ended:
+          pointerInside = false
+          cursor.restore()
+        }
+      }
+      .onChange(of: showsChrome) { _, _ in updateCursor() }
+      .onChange(of: settings) { _, _ in reveal() }
+      .onChange(of: scrubbing) { _, _ in reveal() }
+  }
+  private var focusEvents: some View {
+    pointerEvents
+      .onReceive(
+        NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)
+      ) { _ in
+        hideTask?.cancel()
+        controls = true
+        cursor.restore()
+      }
+      .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) {
+        note in
+        if let changedWindow = note.object as? NSWindow, changedWindow === window {
+          hideTask?.cancel()
+          controls = true
+          cursor.restore()
+        }
+      }
+      .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) {
+        note in
+        if let changedWindow = note.object as? NSWindow, changedWindow === window { reveal() }
+      }
       .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification))
     { _ in model.stop() }
       .onExitCommand {
@@ -421,6 +498,9 @@ struct DesktopPlayerView: View {
           close()
         }
       }
+  }
+  private var playbackEvents: some View {
+    focusEvents
       .onReceive(NotificationCenter.default.publisher(for: .mirrorPlayPause)) { _ in
         model.toggle()
         reveal()
@@ -438,50 +518,56 @@ struct DesktopPlayerView: View {
     { note in
       if let changedWindow = note.object as? NSWindow, changedWindow === window {
         isFullscreen = true
+        reveal()
       }
     }
       .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification))
     { note in
       if let changedWindow = note.object as? NSWindow, changedWindow === window {
         isFullscreen = false
+        reveal()
       }
     }
       .onChange(of: model.playing) { _, _ in reveal() }
       .onChange(of: model.buffering) { _, _ in reveal() }
       .onChange(of: model.showsLoadingIndicator) { _, _ in reveal() }
-      .task {
-        guard let request = session.playback else { return }
-        model.checkpoint = { position, duration in
-          WatchHistorySync.saveLocal(
-            context: context, movie: request.movie, position: position, duration: duration)
-          FirestoreService.shared.savePlaybackProgress(
-            movieId: request.movie.id, title: request.movie.title,
-            posterURL: request.movie.posterURL?.absoluteString, positionSeconds: position,
-            durationSeconds: duration, year: request.movie.year, genres: request.movie.genres ?? [],
-            backdropURL: request.movie.backdropURL?.absoluteString)
-          if request.offline != nil {
-            DownloadStore.shared.updatePlayback(
-              id: request.movie.id, position: position, duration: duration)
-          }
-        }
-        model.start(request)
-        window = NSApp.keyWindow ?? NSApp.windows.first
-        isFullscreen = window?.styleMask.contains(.fullScreen) == true
-        window?.toolbar?.isVisible = false
-        window?.titleVisibility = .hidden
-        window?.titlebarAppearsTransparent = true
-        if window?.styleMask.contains(.fullScreen) == false {
-          enteredFullscreen = true
-          window?.toggleFullScreen(nil)
-        }
+  }
+  private func startPlayback() {
+    guard let request = session.playback else { return }
+    model.checkpoint = { position, duration in
+      WatchHistorySync.saveLocal(
+        context: context, movie: request.movie, position: position, duration: duration)
+      FirestoreService.shared.savePlaybackProgress(
+        movieId: request.movie.id, title: request.movie.title,
+        posterURL: request.movie.posterURL?.absoluteString, positionSeconds: position,
+        durationSeconds: duration, year: request.movie.year, genres: request.movie.genres ?? [],
+        backdropURL: request.movie.backdropURL?.absoluteString)
+      if request.offline != nil {
+        DownloadStore.shared.updatePlayback(
+          id: request.movie.id, position: position, duration: duration)
       }
-      .onDisappear {
-        hideTask?.cancel()
-        model.stop()
-        if enteredFullscreen, window?.styleMask.contains(.fullScreen) == true {
-          window?.toggleFullScreen(nil)
-        }
-      }
+    }
+    model.start(request)
+    window = NSApp.keyWindow ?? NSApp.windows.first
+    isFullscreen = window?.styleMask.contains(.fullScreen) == true
+    previousTitleVisibility = window?.titleVisibility ?? .visible
+    previousTitlebarTransparent = window?.titlebarAppearsTransparent ?? false
+    window?.titleVisibility = .hidden
+    window?.titlebarAppearsTransparent = true
+    if window?.styleMask.contains(.fullScreen) == false {
+      enteredFullscreen = true
+      window?.toggleFullScreen(nil)
+    }
+  }
+  private func stopPlayback() {
+    hideTask?.cancel()
+    cursor.restore()
+    model.stop()
+    window?.titleVisibility = previousTitleVisibility
+    window?.titlebarAppearsTransparent = previousTitlebarTransparent
+    if enteredFullscreen, window?.styleMask.contains(.fullScreen) == true {
+      window?.toggleFullScreen(nil)
+    }
   }
   private var chrome: some View {
     ZStack {
@@ -645,6 +731,7 @@ struct DesktopPlayerView: View {
     }.buttonStyle(.plain).help(title).accessibilityLabel(title)
   }
   private func reveal() {
+    cursor.restore()
     controls = true
     hideTask?.cancel()
     guard model.playing, !model.showsLoadingIndicator, !settings, !scrubbing else { return }
@@ -652,14 +739,22 @@ struct DesktopPlayerView: View {
       try? await Task.sleep(for: .seconds(3))
       if !Task.isCancelled, model.playing, !model.showsLoadingIndicator, !settings, !scrubbing {
         withAnimation(.easeOut(duration: 0.2)) { controls = false }
+        updateCursor()
       }
     }
+  }
+  private func updateCursor() {
+    cursor.update(
+      controlsVisible: showsChrome || settings || scrubbing,
+      pointerInside: pointerInside,
+      activeWindow: NSApp.isActive && window?.isKeyWindow == true)
   }
   private func fullscreen() {
     window?.toggleFullScreen(nil)
     reveal()
   }
   private func close() {
+    cursor.restore()
     model.save()
     session.playback = nil
   }

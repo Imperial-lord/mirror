@@ -40,6 +40,7 @@ struct MirrorDesktopApp: App {
     }
     .defaultSize(width: 1380, height: 900)
     .windowStyle(.hiddenTitleBar)
+    .windowResizability(.contentMinSize)
     .modelContainer(
       for: [WatchHistoryItem.self, WatchlistItem.self, DownloadItem.self], inMemory: Self.isTesting
     )
