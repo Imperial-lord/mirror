@@ -272,14 +272,50 @@ struct DesktopContinueRow: View {
 }
 
 struct DesktopCatalogView: View {
-  @State private var model = SearchViewModel()
+  @State private var aiSearch = false
+  @State private var searchModel = SearchViewModel()
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 20) {
+        DesktopPageHeader(
+          title: "Catalog",
+          subtitle: aiSearch
+            ? "A little inspiration. A great movie." : "Your next obsession is one search away.")
+        HStack(spacing: 6) {
+          catalogMode("Search", icon: .searchLinear, selected: !aiSearch) { aiSearch = false }
+          catalogMode("AI search", icon: .magicStar, selected: aiSearch) { aiSearch = true }
+        }.padding(4).background(Color.mirrorSurface1, in: Capsule())
+      }.padding(.horizontal, 38).padding(.top, 44).padding(.bottom, 20)
+      if aiSearch { DesktopAISearchView() } else { DesktopStandardCatalogView(model: searchModel) }
+    }.background(Color.mirrorBackground)
+      .onReceive(NotificationCenter.default.publisher(for: .mirrorFocusSearch)) { _ in
+        aiSearch = false
+      }
+  }
+  private func catalogMode(
+    _ title: String, icon: PhosphorIcon, selected: Bool, action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      HStack(spacing: 8) {
+        PhosphorView(icon, size: 16)
+        Text(title).font(.system(size: 12, weight: selected ? .semibold : .regular))
+      }
+      .padding(.horizontal, 18).padding(.vertical, 10)
+      .foregroundStyle(selected ? Color.mirrorInk : .mirrorTextSecondary)
+      .background(selected ? Color.mirrorSurface3 : .clear, in: Capsule())
+      .contentShape(Capsule())
+    }.buttonStyle(.plain).accessibilityAddTraits(selected ? .isSelected : [])
+  }
+}
+
+struct DesktopStandardCatalogView: View {
+  let model: SearchViewModel
   @State private var filters = false
   @FocusState private var searchFocused: Bool
   var body: some View {
     @Bindable var model = model
     ScrollView {
       VStack(alignment: .leading, spacing: 25) {
-        DesktopPageHeader(title: "Catalog", subtitle: "Your next obsession is one search away.")
         HStack(spacing: 12) {
           HStack(spacing: 12) {
             PhosphorView(.searchLinear, size: 20, color: .mirrorTextSecondary)

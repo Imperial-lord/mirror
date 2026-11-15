@@ -5,4 +5,5 @@ CURRENT_PROJECT_VERSION = 1
 MIRROR_PORTABLE_BUILD = NO
 PLAYBACK_SERVICE_URL = http:/$()/127.0.0.1:8787
 GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.configure-locally
+AI_SEARCH_SERVICE_URL = $(PLAYBACK_SERVICE_URL)
 #include? "Local.xcconfig"
