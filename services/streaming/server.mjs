@@ -6,6 +6,7 @@ import {randomUUID} from 'node:crypto'
 import WebTorrent from 'webtorrent'
 import {subtitles} from './subtitles.mjs'
 import {catalogParameters, yearCatalog} from './catalog.mjs'
+import {createAISearch, SearchFailure} from './ai-search.mjs'
 import {movieCredits} from './credits.mjs'
 import {PieceCache, byteRange} from './cache.mjs'
 import {serveVideo} from './media.mjs'
@@ -17,19 +18,35 @@ const host = process.env.HOST ?? '127.0.0.1'
 const project = process.env.FIREBASE_PROJECT_ID
 if (host !== '127.0.0.1' && !project) throw new Error('Public hosting requires FIREBASE_PROJECT_ID and Firebase credentials')
 if (project) initializeApp({credential: applicationDefault(), projectId: project})
+const aiSearch = createAISearch()
 const sessions = new Map()
 const MAX_SESSIONS = 4, TTL = 10 * 60_000
 const json = (res, status, body) => { res.writeHead(status, {'Content-Type':'application/json'}); res.end(JSON.stringify(body)) }
 function dispose(id) { const s = sessions.get(id); if (!s) return; sessions.delete(id); s.client.destroy(() => {}) }
 async function authenticated(req) {
-  if (!project) return
+  if (!project) return {uid:'local-development'}
   const token = req.headers.authorization?.replace(/^Bearer /, '')
   if (!token) throw new Error('Unauthorized')
-  await getAuth().verifyIdToken(token)
+  return getAuth().verifyIdToken(token)
 }
 const server = http.createServer(async (req, res) => {
   try {
     const path = new URL(req.url, 'http://localhost').pathname
+    if (path === '/v1/ai/search' && req.method === 'POST') {
+      let user
+      try { user = await authenticated(req) } catch { return json(res,401,{error:'Sign in to use AI search.'}) }
+      try {
+        const chunks=[];let size=0
+        for await(const chunk of req){size+=chunk.length;if(size>24000)return json(res,413,{error:'Conversation too long. Please start a new chat.'});chunks.push(chunk)}
+        let input
+        try{input=JSON.parse(Buffer.concat(chunks).toString())}catch{return json(res,400,{error:'Invalid search request.'})}
+        const controller=new AbortController()
+        const disconnected=()=>{if(!res.writableEnded)controller.abort()}
+        res.on('close',disconnected)
+        try{return json(res,200,await aiSearch(input,user.uid,controller.signal))}
+        finally{res.off('close',disconnected)}
+      }catch(error){return json(res,error instanceof SearchFailure?error.status:502,{code:error.code??'unavailable',error:error instanceof SearchFailure?error.message:'AI search is temporarily unavailable.'})}
+    }
     if (path === '/health' && req.method === 'GET') return json(res, 200, {ok:true})
     const creditsRequest = /^\/v1\/credits\/(tt\d{5,12})$/.exec(path)
     if (creditsRequest && req.method === 'GET') {
