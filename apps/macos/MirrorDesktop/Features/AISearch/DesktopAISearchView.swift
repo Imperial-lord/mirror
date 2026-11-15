@@ -198,7 +198,7 @@ struct DesktopAISearchView: View {
           DesktopAction(title: "Sign in", primary: true) { session.showSignIn = true }
         }
       }
-      HStack(alignment: .bottom, spacing: 12) {
+      HStack(alignment: .center, spacing: 12) {
         TextField("Describe a movie you’d love to watch…", text: $model.draft, axis: .vertical)
           .textFieldStyle(.plain).font(.system(size: 14)).lineLimit(1...4).focused($focused)
           .onSubmit { send() }.disabled(model.searching)
