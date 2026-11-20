@@ -16,6 +16,7 @@
 		188C491F0C515E3D60332E04 /* DesktopUpdatePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 051A76C6A10234B40AEDC855 /* DesktopUpdatePanel.swift */; };
 		24C361FEDF1C2680FC5CAD62 /* AISearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB364E0A93FE6D3AC1587007 /* AISearchService.swift */; };
 		27ED2FDB7913B59BE7CEA1BA /* LibraryHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270BA821FC5C35B2BEA6B2CE /* LibraryHistory.swift */; };
+		29A2E8974D004B5AA31A5570 /* DesktopWindowInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF49691A3A03AC873C18A92E /* DesktopWindowInteractionTests.swift */; };
 		2CA72E6E944747EE8E9B8E92 /* WatchPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F2B8E33AC631E4C846295B /* WatchPreferences.swift */; };
 		2EB9CCA5B249C22863BC6927 /* TrailerPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B52BA741890D50A856165F0 /* TrailerPlayer.swift */; };
 		35C6FCF5B65D1E33A770ED8F /* DesktopPlayerCursorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A055BADF27B7E6F6577D4141 /* DesktopPlayerCursorTests.swift */; };
@@ -39,6 +40,7 @@
 		6D27E3D338D07D2296AF727D /* MovieTrailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC36A573B5AD901A6B710432 /* MovieTrailer.swift */; };
 		6E17C5C0D81926073BE37EFC /* HistoryRemovalIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C240B9908041847EF98D91 /* HistoryRemovalIntegrationTests.swift */; };
 		6F9C882CA832351E547EDF44 /* DesktopCatalogViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3C2EFA1229FB68C68F09A6C /* DesktopCatalogViews.swift */; };
+		72B15644C6D487923B804687 /* DesktopWindowChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD84193ABB21814298772FF9 /* DesktopWindowChrome.swift */; };
 		7806A0EF41F8F9C97876E82F /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 6B6C648B316A1F31D8951580 /* GoogleSignIn */; };
 		789136D13610779B28250B63 /* DesktopPlaybackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */; };
 		7A37E4C33C36A321F5FDBE22 /* WatchHistorySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04550D916A8DA23E9D5C3C77 /* WatchHistorySync.swift */; };
@@ -141,6 +143,7 @@
 		B87D7E4B1C2E789BEF6AB756 /* TrailerPlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrailerPlayerTests.swift; sourceTree = "<group>"; };
 		BD1D7F69C628616C1FDA8853 /* DesktopRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopRootView.swift; sourceTree = "<group>"; };
 		BD214CF8D698D69170AE29E5 /* FirestoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreService.swift; sourceTree = "<group>"; };
+		BD84193ABB21814298772FF9 /* DesktopWindowChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopWindowChrome.swift; sourceTree = "<group>"; };
 		C0DDF5359D538C26F8697590 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C43AFD9B765D06B20C8AB42D /* PeopleMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleMetadataService.swift; sourceTree = "<group>"; };
 		C970CD8EFC8B70F82E6975C1 /* DesktopUpdateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopUpdateTests.swift; sourceTree = "<group>"; };
@@ -152,6 +155,7 @@
 		DCB9DE37ED270B2CBC337527 /* MirrorDesktop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MirrorDesktop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E189B9AABA2F576E1A88A092 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		E3C2EFA1229FB68C68F09A6C /* DesktopCatalogViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopCatalogViews.swift; sourceTree = "<group>"; };
+		EF49691A3A03AC873C18A92E /* DesktopWindowInteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopWindowInteractionTests.swift; sourceTree = "<group>"; };
 		F12E4D8EC6F532CC667D76CF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F2B2DCCEF54548F8C7BE0BBB /* WatchHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHistoryItem.swift; sourceTree = "<group>"; };
 		F9C02FD9FDA67E01A07FC751 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -199,6 +203,7 @@
 			children = (
 				BD1D7F69C628616C1FDA8853 /* DesktopRootView.swift */,
 				86F9C1DE8932F133C5E7B178 /* DesktopSession.swift */,
+				BD84193ABB21814298772FF9 /* DesktopWindowChrome.swift */,
 				01BE45CD4B0321AB2C7830D6 /* MirrorDesktopApp.swift */,
 			);
 			path = App;
@@ -313,6 +318,7 @@
 				CA35772ECD20904BB3AEA4C7 /* DesktopPlaybackTests.swift */,
 				A055BADF27B7E6F6577D4141 /* DesktopPlayerCursorTests.swift */,
 				C970CD8EFC8B70F82E6975C1 /* DesktopUpdateTests.swift */,
+				EF49691A3A03AC873C18A92E /* DesktopWindowInteractionTests.swift */,
 				54C240B9908041847EF98D91 /* HistoryRemovalIntegrationTests.swift */,
 				76C86FB4684877674F1B4C94 /* OfflineDownloadTests.swift */,
 				B87D7E4B1C2E789BEF6AB756 /* TrailerPlayerTests.swift */,
@@ -582,6 +588,7 @@
 				381DBDE06F3355AC6FA5E6DD /* DesktopTheme.swift in Sources */,
 				188C491F0C515E3D60332E04 /* DesktopUpdatePanel.swift in Sources */,
 				98F2A3086994D7AD5935CA2B /* DesktopUpdateService.swift in Sources */,
+				72B15644C6D487923B804687 /* DesktopWindowChrome.swift in Sources */,
 				97E5479098FF83306A0BE208 /* DownloadItem.swift in Sources */,
 				FBC9897A6BEC28CF156E5CC2 /* DownloadStore.swift in Sources */,
 				392329BA18721D052D05F996 /* FirestoreService.swift in Sources */,
@@ -621,6 +628,7 @@
 				789136D13610779B28250B63 /* DesktopPlaybackTests.swift in Sources */,
 				35C6FCF5B65D1E33A770ED8F /* DesktopPlayerCursorTests.swift in Sources */,
 				6C4BE32B0DA839B5D0F6004A /* DesktopUpdateTests.swift in Sources */,
+				29A2E8974D004B5AA31A5570 /* DesktopWindowInteractionTests.swift in Sources */,
 				6E17C5C0D81926073BE37EFC /* HistoryRemovalIntegrationTests.swift in Sources */,
 				9971ACDCBF606910ABBBB616 /* OfflineDownloadTests.swift in Sources */,
 				9CBB4F1613DCFEEE1BD26447 /* TrailerPlayerTests.swift in Sources */,

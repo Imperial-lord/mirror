@@ -20,6 +20,7 @@ For experimental sharing without a paid Apple account, see [the opt-in portable 
 
 - Optional conversational [AI search](../../docs/ai-search.md) in Catalog, with real catalogue suggestions, follow-ups, local chat history and watched-title exclusion. Requires the updated backend and its server-only Groq key.
 - Desktop sidebar, resizable layouts, keyboard navigation and macOS sharing menus.
+- Double-click the empty top bar to enter or leave native fullscreen; single-click dragging and window buttons keep their normal behavior.
 - Sign-in, sign-up with the same temporary four-digit verification step as iOS, password reset, Google sign-in, session persistence and profile management. Apple remains the existing placeholder.
 - Live home collections and watch-history recommendations; catalog search, partial-title matching, genres, country, studio, year, rating and sorting.
 - Movie details, in-app YouTube trailers, Wikimedia-only credits/biographies and filmography navigation. Trailers use an isolated WebKit viewer with native YouTube controls, retry and dismissal cleanup; videos restricted from embedding show an in-app unavailable message.
