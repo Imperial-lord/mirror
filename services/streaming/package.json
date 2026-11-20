@@ -17,7 +17,7 @@
   "dependencies": {
     "adm-zip": "^0.6.1",
     "cheerio": "^1.2.0",
-    "firebase-admin": "^14.5.0",
+    "firebase-admin": "^14.5.1",
     "webtorrent": "3.0.21"
   },
   "private": true,
