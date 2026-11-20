@@ -24,6 +24,7 @@ enum DesktopRoute: Hashable {
   case movie(Int)
   case person(Cast)
   case collection(String, [Int])
+  case history(HistoryCollection)
 }
 struct DesktopPlayback: Identifiable {
   let id = UUID()

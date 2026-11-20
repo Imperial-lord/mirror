@@ -239,32 +239,7 @@ struct DesktopContinueRow: View {
       }
       ScrollView(.horizontal) {
         LazyHStack(alignment: .top, spacing: 18) {
-          ForEach(items) { item in
-            Button {
-              session.play(item.movieId)
-            } label: {
-              VStack(alignment: .leading, spacing: 9) {
-                DesktopImage(url: URL(string: item.backdropURL ?? item.posterURL ?? ""))
-                  .frame(height: 145).overlay {
-                    PhosphorView(.playBold, size: 18, color: .white).frame(width: 43, height: 43)
-                      .background(.black.opacity(0.6), in: Circle())
-                  }.overlay(alignment: .bottomLeading) {
-                    GeometryReader { proxy in
-                      Rectangle().fill(.white).frame(
-                        width: proxy.size.width * item.progressPercentage, height: 3)
-                    }.frame(height: 3)
-                  }.overlay(alignment: .bottomTrailing) {
-                    Text(item.remainingTime).font(.system(size: 10, weight: .medium))
-                      .foregroundStyle(.white).padding(6).background(
-                        .black.opacity(0.65), in: Capsule()
-                      ).padding(9)
-                  }.clipShape(RoundedRectangle(cornerRadius: 12))
-                Text(item.title).font(.system(size: 13, weight: .medium)).lineLimit(1)
-                Text(item.subtitle).font(.system(size: 11)).foregroundStyle(
-                  Color.mirrorTextTertiary)
-              }.frame(width: 260)
-            }.buttonStyle(.plain)
-          }
+          ForEach(items) { item in DesktopHistoryContinueCard(item: item).frame(width: 260) }
         }
       }.scrollIndicators(.hidden)
     }

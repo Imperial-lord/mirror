@@ -138,6 +138,21 @@ final class OfflineDownloadTests: XCTestCase {
     try await until { restored.records.count == 1 }
     XCTAssertEqual(restored.records.first?.position, 1)
     XCTAssertEqual(restored.records.first?.asset?.quality, "720p")
+    try restored.clearPlayback(id: movie.id, userId: "different-account")
+    XCTAssertEqual(restored.records.first?.position, 1, "Another account cannot clear the saved position")
+    try restored.clearPlayback(id: movie.id, userId: "download-test-account")
+    XCTAssertEqual(restored.records.first?.position, 0)
+    XCTAssertNil(restored.records.first?.lastPlayedAt)
+    let cleared = DownloadStore(storageDirectory: storage, accountProvider: { "download-test-account" }, sourceFactory: { source }, transferConfiguration: { .ephemeral }, videoOptimizer: { _ in nil })
+    cleared.start()
+    defer { cleared.shutdown() }
+    try await until { cleared.records.count == 1 }
+    XCTAssertEqual(cleared.records.first?.position, 0, "The reset must survive relaunch")
+    XCTAssertNil(cleared.records.first?.lastPlayedAt)
+    XCTAssertEqual(cleared.records.first?.asset?.quality, "720p")
+    XCTAssertFalse(cleared.records.first?.subtitles.isEmpty ?? true)
+    XCTAssertTrue(FileManager.default.fileExists(atPath: playback.file.path))
+
     let otherAccount = DownloadStore(
       storageDirectory: storage, accountProvider: { "different-account" },
       sourceFactory: { source }, transferConfiguration: { .ephemeral }, videoOptimizer: { _ in nil }
