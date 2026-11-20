@@ -32,6 +32,7 @@ targets:
       - path: ../ios/Mirror/Repositories
       - path: ../ios/Mirror/Core/Utilities/Debouncer.swift
       - path: ../ios/Mirror/Core/DesignSystem/Phosphor.swift
+      - path: ../ios/Mirror/Core/DesignSystem/WatchHistoryMenu.swift
       - path: ../ios/Mirror/Core/Services/LibraryStore.swift
       - path: ../ios/Mirror/Core/Services/FirestoreService.swift
       - path: ../ios/Mirror/Core/Services/WatchHistorySync.swift

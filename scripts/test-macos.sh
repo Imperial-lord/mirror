@@ -9,7 +9,7 @@ if [[ "${CI:-}" == true ]]; then
   # GitHub runners have no Apple development identity. Build the real application,
   # but run only tests that do not write to the protected authentication keychain.
   # The signed local suite includes the authentication integration tests.
-  args+=(CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS= -skip-testing:MirrorDesktopTests/DesktopAuthIntegrationTests)
+  args+=(CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS= -skip-testing:MirrorDesktopTests/DesktopAuthIntegrationTests -skip-testing:MirrorDesktopTests/HistoryRemovalIntegrationTests)
 else
   args+=(-allowProvisioningUpdates)
 fi

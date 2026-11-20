@@ -133,25 +133,14 @@ struct DesktopLibraryView: View {
           Text("Watched").font(.title3.weight(.semibold))
           Spacer()
           Button("View all") {
-            session.path.append(DesktopRoute.collection("Watched", watched.map(\.movieId)))
+            session.path.append(DesktopRoute.history(.watched))
           }.buttonStyle(.plain).font(.caption)
         }
         LazyVGrid(
           columns: [GridItem(.adaptive(minimum: 155, maximum: 200), spacing: 22)], spacing: 26
         ) {
           ForEach(watched.prefix(10)) { item in
-            Button {
-              session.open(item.movieId)
-            } label: {
-              VStack(alignment: .leading, spacing: 9) {
-                DesktopImage(url: URL(string: item.posterURL ?? "")).aspectRatio(
-                  0.675, contentMode: .fit
-                ).clipShape(RoundedRectangle(cornerRadius: 13))
-                Text(item.title).font(.system(size: 13, weight: .medium)).lineLimit(1)
-                Text(item.subtitle).font(.system(size: 11)).foregroundStyle(
-                  Color.mirrorTextTertiary)
-              }
-            }.buttonStyle(.plain)
+            DesktopHistoryPoster(item: item)
           }
         }
         Text("Your watched genres").font(.title3.weight(.semibold))
@@ -160,9 +149,7 @@ struct DesktopLibraryView: View {
             ForEach(LibraryHistory.genres(in: owned), id: \.self) { genre in
               DesktopAction(title: genre) {
                 session.path.append(
-                  DesktopRoute.collection(
-                    "Watched · \(genre)",
-                    LibraryHistory.movies(in: .genre(genre), from: owned).map(\.movieId)))
+                  DesktopRoute.history(.genre(genre)))
               }
             }
           }

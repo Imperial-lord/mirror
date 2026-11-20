@@ -325,6 +325,14 @@ final class DownloadStore: NSObject {
     records[i].lastPlayedAt = Date()
     saveOrReport()
   }
+  func clearPlayback(id: Int, userId: String) throws {
+    guard uid == userId, let i = index(id) else { return }
+    let previous = records[i]
+    records[i].position = 0
+    records[i].duration = 0
+    records[i].lastPlayedAt = nil
+    do { try persist() } catch { records[i] = previous; throw error }
+  }
   private func saveOrReport() {
     do {
       try persist()
