@@ -21,7 +21,7 @@ Mirror pairs a quiet, cinematic interface with live movie discovery, a personal 
 | --- | --- |
 | **Find your next movie** | Search the YTS catalog, filter by genre/year/rating, explore curated collections, and get recommendations from your watch history. |
 | **Make it yours** | Profiles, Favorites, custom playlists, and watch history shared through Firestore. Resume unfinished movies directly; titles become watched after more than 95% completion. Remove individual movies from Continue Watching or Watched through their options menu to permanently clear cloud history and local resume positions. |
-| **Press play** | AVPlayer with HTTP-range streaming, seeking, quality and speed controls, subtitles with English fallback, and fullscreen playback. Torrent handling lives on the server. |
+| **Press play** | AVPlayer with HTTP-range streaming, seeking, quality and speed controls, subtitles with English fallback, and fullscreen playback. Watch trailers inside the app with YouTube's embedded player. Torrent handling lives on the server. |
 | **Take it offline** | Resumable local downloads, a chosen video quality, multiple saved subtitle languages, and playback using only the files available on that device. |
 | **Feel at home** | Dark, light, and system appearance. A dedicated desktop sidebar, resizable layouts, native sharing, volume/mute controls, and keyboard shortcuts on Mac. |
 

@@ -22,7 +22,7 @@ For experimental sharing without a paid Apple account, see [the opt-in portable 
 - Desktop sidebar, resizable layouts, keyboard navigation and macOS sharing menus.
 - Sign-in, sign-up with the same temporary four-digit verification step as iOS, password reset, Google sign-in, session persistence and profile management. Apple remains the existing placeholder.
 - Live home collections and watch-history recommendations; catalog search, partial-title matching, genres, country, studio, year, rating and sorting.
-- Movie details, trailers, Wikimedia-only credits/biographies and filmography navigation.
+- Movie details, in-app YouTube trailers, Wikimedia-only credits/biographies and filmography navigation. Trailers use an isolated WebKit viewer with native YouTube controls, retry and dismissal cleanup; videos restricted from embedding show an in-app unavailable message.
 - Firestore Favorites and playlists, editing membership, renaming/removing folders, and history shared with iOS. Watched means strictly more than 95% of the movie duration.
 - OCI HTTP-range playback, fullscreen by default, seeking, volume/speed/quality controls, subtitles and watch progress synchronization.
 - Local resumable downloads with quality replacement and multiple saved subtitle languages; offline playback restricts choices to what is saved on this Mac. Keep the app running to continue the download queue; interrupted work can be resumed after relaunch.
