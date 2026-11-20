@@ -10,6 +10,7 @@ public struct ContinueWatchingCard: View {
     public let width: CGFloat
     public var onResume: (() -> Void)?
     public var onMore: (() -> Void)?
+    public var historyItem: WatchHistoryItem?
 
     public init(
         title: String,
@@ -19,7 +20,8 @@ public struct ContinueWatchingCard: View {
         progress: Double = 0,
         width: CGFloat = 210,
         onResume: (() -> Void)? = nil,
-        onMore: (() -> Void)? = nil
+        onMore: (() -> Void)? = nil,
+        historyItem: WatchHistoryItem? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -29,6 +31,7 @@ public struct ContinueWatchingCard: View {
         self.width = width
         self.onResume = onResume
         self.onMore = onMore
+        self.historyItem = historyItem
     }
 
     public var body: some View {
@@ -121,12 +124,17 @@ public struct ContinueWatchingCard: View {
 
                     Spacer()
 
-                    Menu { Button("Movie information") { onMore?() } } label: {
-                        PhosphorView(.more, size: 16, color: Color.mirrorTextSecondary)
-                            .frame(width: 28, height: 28)
+                    if let item = historyItem {
+                        WatchHistoryMenu(movieId: item.movieId, title: item.title, userId: item.userId,
+                            watched: item.isWatched, onInformation: onMore)
+                    } else {
+                        Menu { Button("Movie information") { onMore?() } } label: {
+                            PhosphorView(.more, size: 16, color: Color.mirrorTextSecondary)
+                                .frame(width: 28, height: 28)
+                        }
+                        .tint(Color.mirrorInk)
+                        .accessibilityLabel("More about \(title)")
                     }
-                    .tint(Color.mirrorInk)
-                    .accessibilityLabel("More about \(title)")
                 }
                 .frame(width: width)
 

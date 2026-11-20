@@ -85,6 +85,7 @@ struct DesktopRootView: View {
             case .movie(let id): DesktopMovieView(movieID: id)
             case .person(let person): DesktopPersonView(person: person)
             case .collection(let title, let ids): DesktopCollectionView(title: title, ids: ids)
+            case .history(let collection): DesktopHistoryCollectionView(collection: collection)
             }
           }.navigationBarBackButtonHidden()
         }

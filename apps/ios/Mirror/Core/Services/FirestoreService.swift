@@ -7,15 +7,18 @@ import FirebaseAuth
 public final class FirestoreService {
     public static let shared = FirestoreService()
 
-    private lazy var db: Firestore = {
-        return Firestore.firestore()
-    }()
+    private let configuredDB: Firestore?
+    private let account: () -> String?
+    private lazy var db: Firestore = configuredDB ?? Firestore.firestore()
 
-    private init() {}
+    init(db: Firestore? = nil, account: @escaping () -> String? = { Auth.auth().currentUser?.uid }) {
+        configuredDB = db
+        self.account = account
+    }
 
     // MARK: - App User ID
     public var currentUserId: String {
-        if let authUid = Auth.auth().currentUser?.uid {
+        if let authUid = account() {
             return authUid
         }
         if let savedId = UserDefaults.standard.string(forKey: "mirror_user_id") {
@@ -68,15 +71,39 @@ public final class FirestoreService {
     }
 
     public func fetchWatchHistory() async throws -> [[String: Any]] {
-        let snapshot = try await db.collection("users").document(currentUserId)
-            .collection("continue_watching").order(by: "updatedAt", descending: true).getDocuments()
-        return snapshot.documents.map { $0.data() }
+        try await watchHistorySnapshot().rows
     }
 
-    public func enrichWatchHistory(movieId: Int, year: Int, genres: [String], posterURL: String?, backdropURL: String?, watched: Bool) async {
-        try? await db.collection("users").document(currentUserId).collection("continue_watching")
-            .document(String(movieId)).setData(["year": year, "genres": genres,
-                "posterURL": posterURL ?? "", "backdropURL": backdropURL ?? "", "watched": watched], merge: true)
+    func watchHistorySnapshot(userId: String? = nil) async throws -> (rows: [[String: Any]], authoritative: Bool) {
+        if let userId, account() != userId { throw HistoryError.accountChanged }
+        let snapshot = try await db.collection("users").document(userId ?? currentUserId)
+            .collection("continue_watching").order(by: "updatedAt", descending: true).getDocuments(source: .server)
+        return (snapshot.documents.map { $0.data() }, !snapshot.metadata.hasPendingWrites)
+    }
+
+    func deleteWatchHistory(movieId: Int, userId: String) async throws {
+        guard movieId > 0, !userId.isEmpty, account() == userId else { throw HistoryError.accountChanged }
+        let ref = db.collection("users").document(userId).collection("continue_watching").document(String(movieId))
+        // Transactions fail offline instead of silently queuing a "completed" deletion.
+        _ = try await db.runTransaction { transaction, errorPointer in
+            do {
+                _ = try transaction.getDocument(ref)
+                transaction.deleteDocument(ref)
+            } catch { errorPointer?.pointee = error as NSError }
+            return nil
+        }
+    }
+
+    enum HistoryError: LocalizedError {
+        case accountChanged
+        var errorDescription: String? { "Sign in to the same account to remove this movie." }
+    }
+
+    public func enrichWatchHistory(movieId: Int, year: Int, genres: [String], posterURL: String?, backdropURL: String?, watched: Bool, userId: String? = nil) async {
+        if let userId, account() != userId { return }
+        try? await db.collection("users").document(userId ?? currentUserId).collection("continue_watching")
+            .document(String(movieId)).updateData(["year": year, "genres": genres,
+                "posterURL": posterURL ?? "", "backdropURL": backdropURL ?? "", "watched": watched])
     }
 
     public func fetchContinueWatching() async -> [[String: Any]] {

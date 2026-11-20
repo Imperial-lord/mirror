@@ -11,6 +11,11 @@ public struct HomeView: View {
     @State private var isLoadingHistory = true
     private var ownedHistory: [WatchHistoryItem] { watchHistory.filter { $0.userId == AuthService.shared.currentUser?.uid } }
     @Query(sort: \WatchHistoryItem.lastWatched, order: .reverse) private var watchHistory: [WatchHistoryItem]
+    private var recommendationKey: String {
+        let scope = AuthService.shared.currentUser?.uid ?? ""
+        let history = ownedHistory.map { "\($0.movieId)-\($0.lastWatched.timeIntervalSince1970)" }.joined(separator: ",")
+        return "\(scope)-\(isLoadingHistory)-\(viewModel.isLoading)-\(viewModel.collectionRevision)-\(history)"
+    }
 
     public init() {}
 
@@ -102,6 +107,9 @@ public struct HomeView: View {
                 await viewModel.loadAll()
             }
             await progress
+        }
+        .task(id: recommendationKey) {
+            guard !isLoadingHistory, !viewModel.isLoading else { return }
             await personalize()
         }
     }
@@ -119,7 +127,7 @@ public struct HomeView: View {
                         ForEach(inProgress) { item in
                             ContinueWatchingCard(title: item.title, subtitle: item.subtitle, imageURL: URL(string: item.backdropURL ?? item.posterURL ?? ""),
                                 timeRemaining: item.remainingTime, progress: item.progressPercentage, onResume: { resumeMovie = ResumeMovie(id: item.movieId, position: item.progressSeconds) },
-                                onMore: { selectedMovie = item.movieId })
+                                onMore: { selectedMovie = item.movieId }, historyItem: item)
                         }
                     }
                     .padding(.horizontal, Spacing.md)

@@ -100,7 +100,7 @@ struct RecentLibraryContent: View {
             ResumeMoviePlayer(movieId: item.id, position: item.position, requestedAt: item.requestedAt)
         }
         .navigationDestination(for: HistoryCollection.self) { collection in
-            HistoryCollectionPage(collection: collection, items: owned,
+            HistoryCollectionPage(collection: collection,
                 onResume: { resume = ResumeMovie(id: $0.movieId, position: $0.progressSeconds) },
                 onMore: { selectedMovie = $0.movieId }, onRefresh: { await refresh() })
         }
@@ -123,10 +123,10 @@ struct RecentLibraryContent: View {
         ContinueWatchingCard(title: item.title, subtitle: item.subtitle,
             imageURL: URL(string: item.backdropURL ?? item.posterURL ?? ""), timeRemaining: item.remainingTime,
             progress: item.progressPercentage, onResume: { resume = ResumeMovie(id: item.movieId, position: item.progressSeconds) },
-            onMore: { selectedMovie = item.movieId })
+            onMore: { selectedMovie = item.movieId }, historyItem: item)
     }
     private func movieLink(_ item: WatchHistoryItem, width: CGFloat) -> some View {
-        NavigationLink(value: Route.movieDetail(movieId: item.movieId)) { HistoryPosterCard(item: item, width: width) }.buttonStyle(.plain)
+        HistoryPosterCard(item: item, width: width)
     }
     private func refresh() async {
         error = await WatchHistorySync.sync(context: context)
@@ -137,7 +137,8 @@ struct RecentLibraryContent: View {
 private struct HistoryCollectionPage: View {
     @Environment(\.dismiss) private var dismiss
     let collection: HistoryCollection
-    let items: [WatchHistoryItem]
+    @Query(sort: \WatchHistoryItem.lastWatched, order: .reverse) private var history: [WatchHistoryItem]
+    private var items: [WatchHistoryItem] { history.filter { $0.userId == AuthService.shared.currentUser?.uid } }
     let onResume: (WatchHistoryItem) -> Void
     let onMore: (WatchHistoryItem) -> Void
     let onRefresh: () async -> Void
@@ -191,15 +192,13 @@ private struct HistoryCollectionPage: View {
                                     ContinueWatchingCard(title: item.title, subtitle: item.subtitle,
                                         imageURL: URL(string: item.backdropURL ?? item.posterURL ?? ""), timeRemaining: item.remainingTime,
                                         progress: item.progressPercentage, width: max(1, geometry.size.width - 32),
-                                        onResume: { onResume(item) }, onMore: { onMore(item) })
+                                        onResume: { onResume(item) }, onMore: { onMore(item) }, historyItem: item)
                                 }
                             }
                         } else {
                             LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], alignment: .leading, spacing: 20) {
                                 ForEach(movies) { item in
-                                    NavigationLink(value: Route.movieDetail(movieId: item.movieId)) {
-                                        HistoryPosterCard(item: item, width: max(1, (geometry.size.width - 44) / 2), genreContext: selectedGenre)
-                                    }.buttonStyle(.plain)
+                                    HistoryPosterCard(item: item, width: max(1, (geometry.size.width - 44) / 2), genreContext: selectedGenre)
                                 }
                             }
                         }
@@ -239,12 +238,19 @@ private struct HistoryPosterCard: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            LazyImage(url: URL(string: item.posterURL ?? "")) { state in
-                if let image = state.image { image.resizable().scaledToFill() }
-                else { Color(mirrorHex: "18181B") }
-            }.frame(width: width, height: width * 1.5).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
-            Text(item.title).font(.system(size: width > 140 ? 14 : 13, weight: .medium)).foregroundStyle(Color.mirrorInk)
-                .lineLimit(width > 140 ? 2 : 1).frame(maxWidth: .infinity, alignment: .leading)
+            NavigationLink(value: Route.movieDetail(movieId: item.movieId)) {
+                LazyImage(url: URL(string: item.posterURL ?? "")) { state in
+                    if let image = state.image { image.resizable().scaledToFill() }
+                    else { Color(mirrorHex: "18181B") }
+                }.frame(width: width, height: width * 1.5).clipped().clipShape(RoundedRectangle(cornerRadius: 12))
+            }.buttonStyle(.plain).accessibilityLabel(item.title)
+            HStack(spacing: 4) {
+                NavigationLink(value: Route.movieDetail(movieId: item.movieId)) {
+                    Text(item.title).font(.system(size: width > 140 ? 14 : 13, weight: .medium)).foregroundStyle(Color.mirrorInk)
+                        .lineLimit(width > 140 ? 2 : 1).frame(maxWidth: .infinity, alignment: .leading)
+                }.buttonStyle(.plain)
+                WatchHistoryMenu(movieId: item.movieId, title: item.title, userId: item.userId, watched: true)
+            }
             Text(subtitle).font(.mirrorCaptionSmall).foregroundStyle(Color.mirrorTextTertiary).lineLimit(1)
         }.frame(width: width, alignment: .leading)
     }

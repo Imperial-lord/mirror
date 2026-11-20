@@ -231,6 +231,12 @@ final class DownloadStore: NSObject {
         guard position.isFinite, duration.isFinite, position >= 0, duration > 0, let i = index(id) else { return }
         records[i].position = position; records[i].duration = duration; records[i].lastPlayedAt = Date(); saveOrReport()
     }
+    func clearPlayback(id: Int, userId: String) throws {
+        guard uid == userId, let i = index(id) else { return }
+        let previous = records[i]
+        records[i].position = 0; records[i].duration = 0; records[i].lastPlayedAt = nil
+        do { try persist() } catch { records[i] = previous; throw error }
+    }
     private func saveOrReport() { do { try persist(); error = nil } catch { self.error = "Couldn’t save download information. Check free storage." } }
     private func stopRunning() {
         // Restored background transfers outlive the PlaybackService that created their lease.
