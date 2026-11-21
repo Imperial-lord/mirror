@@ -193,32 +193,11 @@ struct DesktopLibraryView: View {
         alignment: .leading, spacing: 23
       ) {
         ForEach(store.playlists) { list in
-          VStack(alignment: .leading, spacing: 10) {
-            Button {
-              folder = list.id
-            } label: {
-              ZStack {
-                Color.mirrorSurface2
-                if let first = store.movies(playlistID: list.id).first {
-                  DesktopImage(url: URL(string: first.poster)).opacity(0.35)
-                }
-                PhosphorView(.folder, size: 43, color: .mirrorInk.opacity(0.7))
-              }.frame(height: 138).clipShape(RoundedRectangle(cornerRadius: 15))
-            }.buttonStyle(.plain).accessibilityLabel("Open \(list.name)")
-            HStack {
-              Button(list.name) { folder = list.id }
-                .font(.system(size: 14, weight: .medium)).buttonStyle(.plain)
-              Spacer()
-              Menu {
-                playlistActions(list)
-              } label: {
-                PhosphorView(.more, size: 15)
-              }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                .help("Manage \(list.name)").accessibilityLabel("Manage \(list.name)")
-            }
-            Text("\(list.movieIds.count) \(list.movieIds.count == 1 ? "movie" : "movies")")
-              .font(.caption).foregroundStyle(Color.mirrorTextTertiary)
-          }.contextMenu {
+          DesktopPlaylistCard(
+            name: list.name, movieCount: list.movieIds.count,
+            artwork: store.movies(playlistID: list.id).first.flatMap { URL(string: $0.poster) },
+            open: { folder = list.id }
+          ) {
             playlistActions(list)
           }
         }
@@ -445,5 +424,47 @@ struct DesktopDownloadsView: View {
     do {
       session.playback = DesktopPlayback(movie: record.movie, offline: try store.playback(record))
     } catch { self.error = error.localizedDescription }
+  }
+}
+
+struct DesktopPlaylistCard<Actions: View>: View {
+  let name: String
+  let movieCount: Int
+  let artwork: URL?
+  let open: () -> Void
+  @ViewBuilder let actions: () -> Actions
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      Button(action: open) {
+        ZStack {
+          Color.mirrorSurface2
+          if let artwork { DesktopImage(url: artwork).opacity(0.35) }
+          PhosphorView(.folder, size: 43, color: .mirrorInk.opacity(0.7))
+        }.frame(height: 138).clipShape(RoundedRectangle(cornerRadius: 15))
+      }.buttonStyle(.plain).accessibilityLabel("Open \(name)")
+      HStack(spacing: 4) {
+        Button(action: open) {
+          Text(name).font(.system(size: 14, weight: .medium)).lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }.buttonStyle(.plain)
+        Menu(content: actions) {
+          Image(systemName: "ellipsis")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .frame(width: 28, height: 28)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .frame(width: 28, height: 28)
+        .fixedSize()
+        .tint(Color.mirrorInk)
+        .help("Manage \(name)")
+        .accessibilityLabel("Manage \(name)")
+      }
+      Text("\(movieCount) \(movieCount == 1 ? "movie" : "movies")")
+        .font(.caption).foregroundStyle(Color.mirrorTextTertiary)
+    }.contextMenu(menuItems: actions)
   }
 }

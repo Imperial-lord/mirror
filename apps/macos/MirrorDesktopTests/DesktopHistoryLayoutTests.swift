@@ -6,6 +6,44 @@ import XCTest
 @testable import MirrorDesktop
 
 @MainActor final class DesktopHistoryLayoutTests: XCTestCase {
+  func testPlaylistCardsKeepTheirTitleAndMenuInOneCompactRow() throws {
+    for dark in [false, true] {
+      let card = DesktopPlaylistCard(
+        name: "A long playlist name that should truncate cleanly", movieCount: 3,
+        artwork: nil, open: {}
+      ) {
+        Button("Edit movies") {}
+        Button("Rename") {}
+        Button("Delete playlist", role: .destructive) {}
+      }
+      .frame(width: 235).fixedSize(horizontal: false, vertical: true)
+      .environment(\.colorScheme, dark ? .dark : .light)
+      .foregroundStyle(Color.mirrorInk).background(Color.mirrorBackground)
+      let view = NSHostingView(rootView: card)
+      view.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+      let size = view.fittingSize
+      XCTAssertEqual(size.width, 235, accuracy: 1)
+      XCTAssertLessThan(size.height, 215)
+      let window = NSWindow(
+        contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
+        backing: .buffered, defer: false)
+      window.isReleasedWhenClosed = false
+      window.appearance = view.appearance
+      window.contentView = view
+      defer { window.close() }
+      window.displayIfNeeded()
+      view.layoutSubtreeIfNeeded()
+      let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+      view.cacheDisplay(in: view.bounds, to: bitmap)
+      let image = NSImage(size: view.bounds.size)
+      image.addRepresentation(bitmap)
+      let attachment = XCTAttachment(image: image)
+      attachment.name = dark ? "Playlist card dark" : "Playlist card light"
+      attachment.lifetime = .keepAlways
+      add(attachment)
+    }
+  }
+
   func testHistoryCardsStayCompactInBothAppearances() throws {
     let container = try ModelContainer(
       for: WatchHistoryItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
