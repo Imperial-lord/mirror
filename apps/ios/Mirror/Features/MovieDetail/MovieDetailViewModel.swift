@@ -37,7 +37,15 @@ public final class MovieDetailViewModel {
             async let suggestionsTask = repository.fetchSuggestions(movieId: movieId)
 
             let detail = try await detailTask
-            let suggestions = (try? await suggestionsTask) ?? []
+            let suggestions: [Movie]
+            do {
+                suggestions = try await suggestionsTask
+            } catch {
+                #if DEBUG
+                print("[MovieDetailViewModel] Suggestions failed to load: \(error)")
+                #endif
+                suggestions = []
+            }
 
             self.state = .loaded(movie: detail, suggestions: suggestions)
             if let people = try? await PeopleMetadataService.shared.credits(movieIMDb: detail.imdbCode), !Task.isCancelled {

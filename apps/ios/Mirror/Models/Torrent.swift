@@ -4,7 +4,7 @@ public struct Torrent: Codable, Identifiable, Hashable {
     public let url: String
     public let hash: String
     public let quality: String
-    public let type: String
+    public let type: String?
     public let isRepack: String?
     public let videoCodec: String?
     public let bitDepth: String?
@@ -13,7 +13,7 @@ public struct Torrent: Codable, Identifiable, Hashable {
     public let peers: Int
     public let size: String
     public let sizeBytes: Int
-    public let dateUploaded: String
+    public let dateUploaded: String?
     public let dateUploadedUnix: Int?
 
     public var id: String { hash }

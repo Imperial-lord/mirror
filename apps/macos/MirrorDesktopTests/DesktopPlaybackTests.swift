@@ -131,4 +131,95 @@ final class DesktopPlaybackTests: XCTestCase {
     XCTAssertFalse(selection.favorite)
     XCTAssertTrue(selection.playlists.isEmpty)
   }
+  func testTorrentDecodesWithoutTypeFieldInSuggestionsPayload() throws {
+    let suggestionJSON = """
+    {
+      "status": "ok",
+      "status_message": "Query was successful",
+      "data": {
+        "movie_count": 4,
+        "movies": [
+          {
+            "id": 6792,
+            "url": "https://yts.mx/movies/spider-man-homecoming-2017",
+            "imdb_code": "tt2250912",
+            "title": "Spider-Man: Homecoming",
+            "year": 2017,
+            "rating": 7.4,
+            "runtime": 133,
+            "genres": ["Action", "Adventure", "Sci-Fi"],
+            "torrents": [
+              {
+                "url": "https://yts.mx/torrent/download/123",
+                "hash": "CDED33F7FBF3E4E073778848FAD17674C0A35B82",
+                "quality": "720p",
+                "seeds": 23,
+                "peers": 21,
+                "size": "809.06 MB",
+                "size_bytes": 848360899,
+                "date_uploaded": "2015-10-31 22:22:51"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    """
+    let data = Data(suggestionJSON.utf8)
+    let response = try JSONDecoder().decode(YTSResponse<MovieSuggestionsData>.self, from: data)
+    let movies = try XCTUnwrap(response.data.movies)
+    XCTAssertEqual(movies.count, 1)
+    let firstMovie = try XCTUnwrap(movies.first)
+    XCTAssertEqual(firstMovie.title, "Spider-Man: Homecoming")
+    let torrent = try XCTUnwrap(firstMovie.torrents?.first)
+    XCTAssertNil(torrent.type)
+    XCTAssertEqual(torrent.quality, "720p")
+  }
+  @MainActor
+  func testMovieDetailViewModelExposesLoadedSuggestions() async throws {
+    let movieDetailJSON = """
+    {
+      "id": 13596,
+      "url": "https://yts.mx/movies/spider-man-far-from-home-2019",
+      "imdb_code": "tt6320628",
+      "title": "Spider-Man: Far from Home",
+      "year": 2019,
+      "rating": 7.4,
+      "runtime": 129
+    }
+    """
+    let movieDetail = try JSONDecoder().decode(MovieDetail.self, from: Data(movieDetailJSON.utf8))
+    let suggestedMovieJSON = """
+    {
+      "id": 6792,
+      "url": "https://yts.mx/movies/spider-man-homecoming-2017",
+      "imdb_code": "tt2250912",
+      "title": "Spider-Man: Homecoming",
+      "year": 2017,
+      "rating": 7.4,
+      "runtime": 133
+    }
+    """
+    let suggestedMovie = try JSONDecoder().decode(Movie.self, from: Data(suggestedMovieJSON.utf8))
+
+    struct MockSuggestionRepository: MovieRepositoryProtocol {
+      let detail: MovieDetail
+      let suggestions: [Movie]
+      func fetchMovies(endpoint: APIEndpoint) async throws -> [Movie] { [] }
+      func fetchMovieDetail(id: Int) async throws -> MovieDetail { detail }
+      func fetchSuggestions(movieId: Int) async throws -> [Movie] { suggestions }
+    }
+
+    let repo = MockSuggestionRepository(detail: movieDetail, suggestions: [suggestedMovie])
+    let model = MovieDetailViewModel(movieId: 13596, repository: repo)
+    await model.loadDetails()
+
+    if case .loaded(let movie, let suggestions) = model.state {
+      XCTAssertEqual(movie.id, 13596)
+      XCTAssertEqual(suggestions.count, 1)
+      XCTAssertEqual(suggestions.first?.title, "Spider-Man: Homecoming")
+    } else {
+      XCTFail("ViewModel state should be .loaded with suggestions")
+    }
+  }
 }
