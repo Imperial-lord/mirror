@@ -41,6 +41,13 @@ import SwiftUI
     self.source = source ?? PlaybackService()
     self.resumeProvider = resumeProvider
   }
+  private var recoveryTask: Task<Void, Never>?
+  private var recoveryAttempts = 0
+  private var workspaceObservers: [NSObjectProtocol] = []
+  private let audioRoute = DesktopAudioRouteMonitor()
+  private var sleeping = false
+  private var stalledSince: Date?
+  private var healthySince: Date?
   private var prepareTask: Task<Void, Never>?
   private var subtitleTask: Task<Void, Never>?
   private var observations: [NSKeyValueObservation] = []
@@ -62,6 +69,17 @@ import SwiftUI
   var qualityLabel: String { request?.offline?.quality ?? MovieQuality.label(quality) }
   func start(_ request: DesktopPlayback) {
     self.request = request
+    recoveryAttempts = 0
+    audioRoute.start { [weak self] in self?.pauseForAudioChange() }
+    let workspace = NSWorkspace.shared.notificationCenter
+    workspaceObservers = [
+      workspace.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+        Task { @MainActor in self?.suspendForSleep() }
+      },
+      workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+        Task { @MainActor in self?.resumeAfterSleep() }
+      }
+    ]
     mediaControls.start(player: player, title: request.movie.title,
       play: { [weak self] in if let self, !self.wantsPlay { self.toggle() } },
       pause: { [weak self] in if let self, self.wantsPlay { self.toggle() } },
@@ -102,6 +120,8 @@ import SwiftUI
     }
   }
   func open(resume: Double? = nil) {
+    recoveryTask?.cancel()
+    recoveryTask = nil
     prepareTask?.cancel()
     source.close()
     player.pause()
@@ -111,6 +131,7 @@ import SwiftUI
     seekGeneration = UUID()
     loading = true
     failure = nil
+    stalledSince = Date()
     let token = UUID()
     generation = token
     seekTarget = resume ?? position
@@ -132,10 +153,7 @@ import SwiftUI
           Task { @MainActor in
             guard let self, self.generation == token else { return }
             if item.status == .failed {
-              self.failure = "Please try again or choose another quality in Settings."
-              self.loading = false
-              self.wantsPlay = false
-              self.updateSleep()
+              self.recoverPlayback()
             } else if item.status == .readyToPlay {
               self.ready = true
               self.loading = false
@@ -169,11 +187,57 @@ import SwiftUI
         }
       } catch is CancellationError {} catch {
         guard generation == token else { return }
-        loading = false
-        failure = error.localizedDescription
-        wantsPlay = false
-        updateSleep()
+        recoverPlayback()
       }
+    }
+  }
+  func retryPlayback() {
+    recoveryAttempts = 0
+    recoveryTask?.cancel()
+    recoveryTask = nil
+    open(resume: position)
+  }
+  func pauseForAudioChange() {
+    wantsPlay = false
+    player.pause()
+    save()
+    updateSleep()
+  }
+  func suspendForSleep() {
+    sleeping = true
+    save()
+    generation = UUID()
+    prepareTask?.cancel()
+    recoveryTask?.cancel()
+    recoveryTask = nil
+    player.pause()
+  }
+  func resumeAfterSleep() {
+    guard sleeping else { return }
+    sleeping = false
+    guard request != nil else { return }
+    retryPlayback()
+  }
+  func recoverPlayback() {
+    guard request != nil, !sleeping, recoveryTask == nil else { return }
+    save()
+    guard !offline, recoveryAttempts < 2 else {
+      loading = false
+      buffering = false
+      seeking = false
+      failure = offline ? "This downloaded video couldn’t be played." : "Connection interrupted. Your position is saved. Try again to resume."
+      player.pause()
+      updateSleep()
+      return
+    }
+    recoveryAttempts += 1
+    loading = true
+    player.pause()
+    recoveryTask = Task { [weak self] in
+      do { try await Task.sleep(for: .seconds(2)) } catch { return }
+      guard let self, self.request != nil else { return }
+      self.recoveryTask = nil
+      self.open(resume: self.position)
     }
   }
   func toggle() {
@@ -263,8 +327,20 @@ import SwiftUI
     }
   }
   private func updateTime() {
+    guard !sleeping else { return }
+    if failure == nil && (loading || buffering || seeking) {
+      healthySince = nil
+      if stalledSince == nil { stalledSince = Date() }
+      if Date().timeIntervalSince(stalledSince!) > 20 { recoverPlayback(); stalledSince = Date() }
+    } else {
+      stalledSince = nil
+      if playing {
+        if healthySince == nil { healthySince = Date() }
+        if Date().timeIntervalSince(healthySince!) > 30 { recoveryAttempts = 0 }
+      }
+    }
     let seconds = player.currentTime().seconds
-    if seconds.isFinite { position = max(0, seconds) }
+    if seconds.isFinite, ready, !seeking { position = max(0, seconds) }
     let length = player.currentItem?.duration.seconds ?? 0
     if length.isFinite, length > 0 { duration = length }
     let captionTime = position - UserDefaults.standard.double(forKey: "subtitleTimingOffset")
@@ -293,6 +369,11 @@ import SwiftUI
     }
   }
   func stop() {
+    audioRoute.stop()
+    recoveryTask?.cancel()
+    recoveryTask = nil
+    for observer in workspaceObservers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
+    workspaceObservers = []
     mediaControls.stop()
     save()
     generation = UUID()
@@ -309,6 +390,7 @@ import SwiftUI
     observations = []
     itemObservation = nil
     if let url = request?.offline?.file { DownloadStore.shared.releasePlaybackFile(url) }
+    request = nil
     if sleepAssertion != 0 {
       IOPMAssertionRelease(sleepAssertion)
       sleepAssertion = 0
@@ -610,7 +692,7 @@ struct DesktopPlayerView: View {
               .multilineTextAlignment(.center).frame(maxWidth: 500)
             Button {
               model.wantsPlay = true
-              model.open(resume: model.position)
+              model.retryPlayback()
             } label: {
               Text("Try again").foregroundStyle(.black).padding(.horizontal, 30).padding(
                 .vertical, 13
