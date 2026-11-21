@@ -39,23 +39,56 @@ struct DesktopPlayback: Identifiable {
   var showSignIn = false
   var showProfiles = false
   var error: String?
+  var preview: DesktopPreviewSelection?
+  private var previewCloseTask: Task<Void, Never>?
+  private var previewSourceInside = false
+  private var previewCardInside = false
+  func showPreview(_ selection: DesktopPreviewSelection) {
+    guard playback == nil, !showSignIn, !showProfiles else { return }
+    previewCloseTask?.cancel()
+    previewSourceInside = true
+    previewCardInside = false
+    preview = selection
+  }
+  func updatePreviewHover(_ id: UUID, inside: Bool, overCard: Bool) {
+    guard preview?.id == id else { return }
+    if overCard { previewCardInside = inside } else { previewSourceInside = inside }
+    previewCloseTask?.cancel()
+    guard !previewSourceInside, !previewCardInside else { return }
+    previewCloseTask = Task { [weak self] in
+      do { try await Task.sleep(for: .milliseconds(220)) } catch { return }
+      self?.closePreview(id)
+    }
+  }
+  func closePreview(_ id: UUID? = nil) {
+    guard id == nil || preview?.id == id else { return }
+    previewCloseTask?.cancel()
+    previewCloseTask = nil
+    previewSourceInside = false
+    previewCardInside = false
+    preview = nil
+  }
   private var openingTask: Task<Void, Never>?
   func navigate(_ section: DesktopSection) {
+    closePreview()
     openingTask?.cancel()
     playback = nil
     self.section = section
     path = NavigationPath()
   }
   func open(_ id: Int) {
+    closePreview()
     openingTask?.cancel()
     path.append(DesktopRoute.movie(id))
   }
   func goBack() {
+    closePreview()
     openingTask?.cancel()
     guard !path.isEmpty else { return }
     path.removeLast()
   }
   func play(_ id: Int) {
+    closePreview()
     guard AuthService.shared.isAuthenticated else {
       showSignIn = true
       return

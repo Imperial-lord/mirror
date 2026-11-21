@@ -8,7 +8,6 @@ struct DesktopMovieView: View {
   @State private var save = false
   @State private var download = false
   @State private var allCredits = false
-  @State private var trailer: MovieTrailer?
   init(movieID: Int) {
     self.movieID = movieID
     _model = State(initialValue: MovieDetailViewModel(movieId: movieID))
@@ -29,9 +28,6 @@ struct DesktopMovieView: View {
       }.padding(.horizontal, 38).padding(.bottom, 48)
     }.background(Color.mirrorBackground).task {
       if case .idle = model.state { await model.loadDetails() }
-    }
-    .sheet(item: $trailer) {
-      TrailerPlayerView(trailer: $0).frame(minWidth: 640, idealWidth: 960, minHeight: 440, idealHeight: 640)
     }
   }
   private func content(_ movie: MovieDetail, suggestions: [Movie]) -> some View {
@@ -96,10 +92,6 @@ struct DesktopMovieView: View {
         Text(movie.descriptionFull ?? movie.descriptionIntro ?? "No synopsis available.").font(
           .system(size: 14)
         ).lineSpacing(6).foregroundStyle(Color.mirrorTextSecondary).textSelection(.enabled)
-        if let availableTrailer = movie.trailer {
-          DesktopAction(title: "Watch trailer", icon: .playLinear) { trailer = availableTrailer }
-            .padding(.top, 6)
-        }
       }.frame(maxWidth: 850, alignment: .leading)
       if model.isLoadingCredits {
         ProgressView().frame(maxWidth: .infinity, minHeight: 100).accessibilityLabel(

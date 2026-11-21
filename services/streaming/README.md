@@ -143,3 +143,35 @@ days, and links portrait license/source pages. The OMDb endpoint remains for
 older installed app versions. Filmography lists only Wikimedia-linked titles
 available in the movie catalog. Missing biography fields and unavailable
 filmographies are omitted. Pull to refresh retries person metadata.
+
+### macOS Home previews
+
+The Mac app sends the movie IDs from its Home card rows to `POST /v1/home-previews`
+using its Firebase ID token. The preview service keeps the latest snapshot for
+each account even while the app is closed, and returns ready clips only for IDs
+in the request. The app plays the
+muted MP4 directly from the private OCI bucket. A title without a ready clip keeps
+its regular artwork.
+
+Run `previews/api.mjs` on one worker with a persistent, private `/state` directory.
+Build its image with `previews/Dockerfile` and an existing streaming service image
+as `STREAMING_IMAGE`. Set `FIREBASE_PROJECT_ID`, `PREVIEW_OCI_NAMESPACE`,
+`PREVIEW_OCI_BUCKET`, and `PREVIEW_READ_URL`. The read URL must be an OCI read-only
+pre-authenticated request for `home/v1/` with listing disabled, and include the
+`home/v1/` suffix. Keep it out of logs and rotate it before expiry. Route only
+`/v1/home-previews` from the HTTPS ingress to this worker's API.
+
+Grant that compute instance permission to manage objects in the dedicated clip
+bucket through an OCI instance principal. Schedule an isolated refresh container
+every two hours. Mount the API's state directory at `/state` and use a host lock
+to keep runs from overlapping. The worker needs host networking for the OCI
+instance metadata service.
+
+```cron
+17 */2 * * * root /usr/bin/flock -n /run/lock/mirror-home-preview-refresh.lock /usr/bin/docker run --rm --network host --memory 256m --cpus .65 --env-file /path/to/preview.env -v /var/lib/mirror-home-previews:/state mirror-home-previews:local nice -n 10 node previews/refresh.mjs
+```
+
+Each run takes up to 12 new or retriable titles, one at a time. It fetches a
+limited range of a catalog torrent, encodes a muted 10-second clip, and releases
+the torrent before moving on. The worker keeps at most 200 clips, each capped
+at 2 MiB, and prunes clips outside the active Home snapshots on the next run.

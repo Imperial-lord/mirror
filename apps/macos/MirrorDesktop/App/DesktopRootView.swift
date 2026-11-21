@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DesktopRootView: View {
   @Environment(DesktopSession.self) private var session
+  @Environment(\.scenePhase) private var scenePhase
   @Environment(\.modelContext) private var context
   @State private var launched = false
   private let auth = AuthService.shared
@@ -46,6 +47,17 @@ struct DesktopRootView: View {
         session.path = NavigationPath()
       }
     }
+    .onChange(of: scenePhase) { _, phase in if phase != .active { session.closePreview() } }
+    .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { _ in
+      session.closePreview()
+    }
+    .onChange(of: session.playback?.id) { _, _ in session.closePreview() }
+    .onChange(of: session.path) { _, _ in session.closePreview() }
+    .onKeyPress(.escape) {
+      guard session.preview != nil else { return .ignored }
+      session.closePreview()
+      return .handled
+    }
     .sheet(isPresented: $session.showSignIn) {
       DesktopAuthView(onComplete: {
         session.showSignIn = false
@@ -79,6 +91,7 @@ struct DesktopRootView: View {
           case .settings: DesktopSettingsView()
           }
         }
+        .overlayPreferenceValue(DesktopPreviewAnchor.self, previewLayer)
         .navigationDestination(for: DesktopRoute.self) { route in
           Group {
             switch route {
@@ -87,12 +100,16 @@ struct DesktopRootView: View {
             case .collection(let title, let ids): DesktopCollectionView(title: title, ids: ids)
             case .history(let collection): DesktopHistoryCollectionView(collection: collection)
             }
-          }.navigationBarBackButtonHidden()
+          }
+          .navigationBarBackButtonHidden()
         }
         .navigationBarBackButtonHidden()
       }
       .navigationBarBackButtonHidden()
     }
+  }
+  private func previewLayer(_ anchor: Anchor<CGRect>?) -> some View {
+    DesktopPreviewLayer(anchor: anchor)
   }
   private var sidebar: some View {
     VStack(alignment: .leading, spacing: 0) {

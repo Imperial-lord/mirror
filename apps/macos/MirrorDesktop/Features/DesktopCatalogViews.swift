@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DesktopPoster: View {
   let movie: Movie
+  var previewURL: URL?
   @Environment(DesktopSession.self) private var session
   @State private var hovering = false
   var body: some View {
@@ -25,7 +26,11 @@ struct DesktopPoster: View {
         Text("\(String(movie.year)) · \(movie.genres?.first ?? "Movie")").font(.system(size: 11))
           .foregroundStyle(Color.mirrorTextTertiary).lineLimit(1)
       }.contentShape(Rectangle())
-    }.buttonStyle(.plain).onHover { hovering = $0 }.animation(
+    }.buttonStyle(.plain).onHover { hovering = $0 }
+    .modifier(DesktopClipHover(clip: previewURL) { id, url in
+      DesktopPreviewSelection(id: id, movie: movie, clip: url)
+    })
+    .animation(
       .easeOut(duration: 0.16), value: hovering
     )
     .contextMenu {
@@ -38,6 +43,7 @@ struct DesktopPoster: View {
 struct DesktopMovieRow: View {
   let title: String
   let movies: [Movie]
+  var previewURLs: [Int: URL] = [:]
   @Environment(DesktopSession.self) private var session
   var body: some View {
     VStack(alignment: .leading, spacing: 19) {
@@ -55,7 +61,7 @@ struct DesktopMovieRow: View {
       }
       ScrollView(.horizontal) {
         LazyHStack(alignment: .top, spacing: 18) {
-          ForEach(movies) { DesktopPoster(movie: $0).frame(width: 157) }
+          ForEach(movies) { DesktopPoster(movie: $0, previewURL: previewURLs[$0.id]).frame(width: 157) }
         }.padding(.bottom, 3)
       }.scrollIndicators(.hidden)
     }
@@ -69,6 +75,15 @@ struct DesktopHomeView: View {
   @Query(sort: \WatchHistoryItem.lastWatched, order: .reverse) private var history:
     [WatchHistoryItem]
   @State private var model = HomeViewModel()
+  @State private var previewURLs: [Int: URL] = [:]
+  private var accountID: String? { AuthService.shared.currentUser?.uid }
+  private var previewCandidates: [Int] {
+    let rows = [model.selectedForYou, model.trendingMovies, model.topRated]
+      + Genre.catalogGenres.compactMap { model.genreMovies[$0] }
+    var seen = Set<Int>()
+    return (continuing.map(\.movieId) + rows.joined().map(\.id)).filter { seen.insert($0).inserted }
+  }
+  private var continuing: [WatchHistoryItem] { Array(userHistory.filter(\.isInProgress).prefix(10)) }
   @State private var heroIndex = 0
   @State private var heroVisible = false
   @State private var usingHeroControls = false
@@ -116,20 +131,20 @@ struct DesktopHomeView: View {
           .onAppear { heroVisible = true }
           .onDisappear { heroVisible = false }
         }
-        if !userHistory.filter(\.isInProgress).isEmpty {
-          DesktopContinueRow(items: Array(userHistory.filter(\.isInProgress).prefix(10)))
+        if !continuing.isEmpty {
+          DesktopContinueRow(items: continuing, previewURLs: previewURLs)
         }
         if !model.selectedForYou.isEmpty {
-          DesktopMovieRow(title: "Selected For You", movies: model.selectedForYou)
+          DesktopMovieRow(title: "Selected For You", movies: model.selectedForYou, previewURLs: previewURLs)
         }
         if !model.trendingMovies.isEmpty {
-          DesktopMovieRow(title: "Popular Now", movies: model.trendingMovies)
+          DesktopMovieRow(title: "Popular Now", movies: model.trendingMovies, previewURLs: previewURLs)
         }
-        if !model.topRated.isEmpty { DesktopMovieRow(title: "Top Rated", movies: model.topRated) }
+        if !model.topRated.isEmpty { DesktopMovieRow(title: "Top Rated", movies: model.topRated, previewURLs: previewURLs) }
         ForEach(Genre.catalogGenres) { genre in
           Group {
             if let movies = model.genreMovies[genre], !movies.isEmpty {
-              DesktopMovieRow(title: genre.bestTitle, movies: movies)
+              DesktopMovieRow(title: genre.bestTitle, movies: movies, previewURLs: previewURLs)
             } else if model.genreErrors[genre] != nil {
               HStack {
                 Text(genre.bestTitle).font(.headline)
@@ -143,6 +158,19 @@ struct DesktopHomeView: View {
         }
       }.padding(.horizontal, 38).padding(.bottom, 45)
     }.scrollIndicators(.hidden).background(Color.mirrorBackground)
+      .onChange(of: accountID) { previewURLs = [:] }
+      .task(id: DesktopHomePreviewRequest(accountID: accountID, movieIDs: previewCandidates)) {
+        let ids = previewCandidates
+        guard accountID != nil, !ids.isEmpty else { return }
+        do { try await Task.sleep(for: .seconds(1)) } catch { return }
+        while !Task.isCancelled {
+          if let current = try? await DesktopHomePreviewRequest.refresh(ids), !Task.isCancelled {
+            previewURLs = current
+          }
+          let refreshDelay: Duration = previewURLs.isEmpty ? .seconds(30) : .seconds(180)
+          do { try await Task.sleep(for: refreshDelay) } catch { return }
+        }
+      }
       .task(id: heroRotationKey) {
         guard canRotateHero else { return }
         do { try await Task.sleep(for: .seconds(7)) } catch { return }
@@ -228,6 +256,7 @@ struct DesktopHomeView: View {
 
 struct DesktopContinueRow: View {
   let items: [WatchHistoryItem]
+  var previewURLs: [Int: URL] = [:]
   @Environment(DesktopSession.self) private var session
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
@@ -239,7 +268,12 @@ struct DesktopContinueRow: View {
       }
       ScrollView(.horizontal) {
         LazyHStack(alignment: .top, spacing: 18) {
-          ForEach(items) { item in DesktopHistoryContinueCard(item: item).frame(width: 260) }
+          ForEach(items) { item in
+            DesktopHistoryContinueCard(item: item).frame(width: 260)
+              .modifier(DesktopClipHover(clip: previewURLs[item.movieId]) { id, url in
+                DesktopPreviewSelection(id: id, history: item, clip: url)
+              })
+          }
         }
       }.scrollIndicators(.hidden)
     }

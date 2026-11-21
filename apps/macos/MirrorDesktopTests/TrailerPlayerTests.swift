@@ -100,6 +100,21 @@ import XCTest
     try await Task.sleep(for: .milliseconds(100))
     XCTAssertEqual(player.state, .ready)
   }
+  func testHoverCardStaysOpenWhenPointerMovesFromPosterIntoCard() async throws {
+    let movie = try JSONDecoder().decode(Movie.self, from: Data("""
+      {"id":1,"url":"","imdb_code":"tt1234567","title":"Fixture","year":2024,"rating":7,"runtime":100}
+      """.utf8))
+    let session = DesktopSession()
+    let id = UUID()
+    session.showPreview(DesktopPreviewSelection(id: id, movie: movie, clip: URL(fileURLWithPath: "/fixture.mp4")))
+    session.updatePreviewHover(id, inside: true, overCard: true)
+    session.updatePreviewHover(id, inside: false, overCard: false)
+    try await Task.sleep(for: .milliseconds(275))
+    XCTAssertEqual(session.preview?.id, id)
+    session.updatePreviewHover(id, inside: false, overCard: true)
+    try await until { session.preview == nil }
+  }
+
   /// Explicit opt-in only; ordinary CI uses local HTML fixtures and never depends on YouTube.
   func testLiveTrailerPlaybackWhenEnabled() async throws {
     try XCTSkipUnless(ProcessInfo.processInfo.environment["MIRROR_LIVE_TRAILER_TEST"] == "1")
