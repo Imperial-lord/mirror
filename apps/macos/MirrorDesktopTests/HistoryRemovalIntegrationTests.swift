@@ -28,13 +28,23 @@ import XCTest
     defer { try? auth.signOut() }
     let uid = account.user.uid
     let service = FirestoreService(db: db, account: { auth.currentUser?.uid })
-    let ref = db.collection("users").document(uid).collection("continue_watching").document("123")
-    let favorite = db.collection("users").document(uid).collection("favorites").document("123")
+    let user = db.collection("users").document(uid)
+    let ref = user.collection("continue_watching").document("123")
+    let favorite = user.collection("favorites").document("123")
+    let playlist = user.collection("playlists").document("fixture")
     try await ref.setData([
       "movieId": 123, "title": "Fixture", "positionSeconds": 60, "durationSeconds": 600,
       "updatedAt": FieldValue.serverTimestamp(),
     ])
-    try await favorite.setData(["title": "Fixture"])
+    try await playlist.setData(["name": "Fixture playlist", "movieIds": [456]])
+    let movie = SavedMovie(id: 123, title: "Fixture", year: 2020, genres: ["Drama"], poster: "")
+    try await LibraryStore.addFavorite(movie, to: user)
+    let originalFavorite = try await favorite.getDocument(source: .server)
+    try await LibraryStore.addFavorite(movie, to: user)
+    let repeatedFavorite = try await favorite.getDocument(source: .server)
+    let unchangedPlaylist = try await playlist.getDocument(source: .server)
+    XCTAssertEqual(originalFavorite.get("addedAt") as? Timestamp, repeatedFavorite.get("addedAt") as? Timestamp)
+    XCTAssertEqual(unchangedPlaylist.get("movieIds") as? [Int], [456])
     let cachedBefore = try await ref.getDocument(source: .cache)
     XCTAssertTrue(cachedBefore.exists)
     do {

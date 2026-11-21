@@ -9,9 +9,13 @@ struct SavedMovie: Identifiable, Hashable {
     let genres: [String]
     let poster: String
 
+    init(id: Int, title: String, year: Int, genres: [String], poster: String) {
+        self.id = id; self.title = title; self.year = year
+        self.genres = genres; self.poster = poster
+    }
     init(movie: MovieDetail) {
-        id = movie.id; title = movie.title; year = movie.year
-        genres = movie.genres ?? []; poster = movie.posterURL?.absoluteString ?? ""
+        self.init(id: movie.id, title: movie.title, year: movie.year,
+                  genres: movie.genres ?? [], poster: movie.posterURL?.absoluteString ?? "")
     }
     init?(data: [String: Any], documentID: String) {
         guard let id = data["id"] as? Int ?? Int(documentID), let title = data["title"] as? String else { return nil }
@@ -135,6 +139,23 @@ final class LibraryStore {
         try await user().collection("playlists").document(id).updateData(["name": name])
     }
     func delete(id: String) async throws { try await user().collection("playlists").document(id).delete() }
+    func addFavorite(_ movie: SavedMovie) async throws {
+        try await Self.addFavorite(movie, to: user())
+    }
+    static func addFavorite(_ movie: SavedMovie, to user: DocumentReference) async throws {
+        let ref = user.collection("favorites").document(String(movie.id))
+        _ = try await user.firestore.runTransaction { transaction, pointer in
+            do {
+                let snapshot = try transaction.getDocument(ref)
+                if !snapshot.exists {
+                    var data = movie.data
+                    data["addedAt"] = FieldValue.serverTimestamp()
+                    transaction.setData(data, forDocument: ref)
+                }
+            } catch let error as NSError { pointer?.pointee = error }
+            return nil
+        }
+    }
     func save(movie: SavedMovie, favorite: Bool, selections: Set<String>) async throws {
         let user = try user(), batch = db.batch()
         let shouldSave = favorite || !selections.isEmpty
