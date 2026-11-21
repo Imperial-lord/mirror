@@ -2,18 +2,13 @@ import {mkdtemp, rm} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {fileURLToPath} from 'node:url'
-import {createState} from './state.mjs'
+import {createState, pendingClips} from './state.mjs'
 import {movieHash, makeTorrentClip, runFile} from './clip.mjs'
 
 const state = createState(process.env.PREVIEW_STATE_DIR ?? '/state')
 const helper = fileURLToPath(new URL('./oci-store.py', import.meta.url))
-const batch = Number(process.env.PREVIEW_MAX_ATTEMPTS ?? 12)
-const retryAfter = 90 * 60 * 1000
 const trackers = ['udp://tracker.opentrackr.org:1337/announce', 'udp://open.demonii.com:1337/announce']
   .map(url => `&tr=${encodeURIComponent(url)}`).join('')
-if (!Number.isSafeInteger(batch) || batch < 1 || batch > 24) {
-  throw new Error('PREVIEW_MAX_ATTEMPTS must be between 1 and 24')
-}
 
 async function objects(action, ...args) {
   const {stdout} = await runFile('/opt/preview-tools/bin/python', [helper, action, ...args], {
@@ -36,10 +31,8 @@ async function refresh() {
     stored.delete(id)
   }
 
-  const failureTime = id => failures[id]?.at ?? failures[id] ?? 0
-  const candidates = [...wanted].filter(id =>
-    !stored.has(id) && Date.now() - failureTime(id) >= retryAfter)
-    .sort((a, b) => failureTime(a) - failureTime(b)).slice(0, batch)
+  const candidates = pendingClips(wanted, stored, failures)
+  console.log(`Preview refresh started with ${candidates.length} missing of ${wanted.size} Home titles`)
   const scratch = await mkdtemp(join(tmpdir(), 'mirror-preview-'))
   try {
     for (const id of candidates) {

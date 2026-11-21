@@ -163,15 +163,17 @@ pre-authenticated request for `home/v1/` with listing disabled, and include the
 
 Grant that compute instance permission to manage objects in the dedicated clip
 bucket through an OCI instance principal. Schedule an isolated refresh container
-every two hours. Mount the API's state directory at `/state` and use a host lock
+every 12 hours. Mount the API's state directory at `/state` and use a host lock
 to keep runs from overlapping. The worker needs host networking for the OCI
 instance metadata service.
 
 ```cron
-17 */2 * * * root /usr/bin/flock -n /run/lock/mirror-home-preview-refresh.lock /usr/bin/docker run --rm --network host --memory 256m --cpus .65 --env-file /path/to/preview.env -v /var/lib/mirror-home-previews:/state mirror-home-previews:local nice -n 10 node previews/refresh.mjs
+17 */12 * * * root /usr/bin/flock -n /run/lock/mirror-home-preview-refresh.lock /usr/bin/docker run --rm --network host --memory 320m --cpus .65 --env-file /path/to/preview.env -v /var/lib/mirror-home-previews:/state mirror-home-previews:local nice -n 10 node previews/refresh.mjs
 ```
 
-Each run takes up to 12 new or retriable titles, one at a time. It fetches a
-limited range of a catalog torrent, encodes a muted 10-second clip, and releases
-the torrent before moving on. The worker keeps at most 200 clips, each capped
-at 2 MiB, and prunes clips outside the active Home snapshots on the next run.
+Each run attempts every missing title from the current Home snapshots, one at a
+time. It fetches a limited range of a catalog torrent, encodes a muted 10-second
+clip, and releases the torrent before moving on. Unavailable titles are retried
+on the next run. An overlapping cron invocation skips starting a second worker.
+Each clip is capped at 2 MiB. The worker prunes clips outside the active Home
+snapshots on the next run.

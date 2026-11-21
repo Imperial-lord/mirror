@@ -2,13 +2,18 @@ import {mkdirSync, readFileSync, renameSync, writeFileSync} from 'node:fs'
 import {join} from 'node:path'
 
 export const maxPerAccount = 320
-export const maxClips = 200
 const maxAccounts = 50
 
 export function movieIDs(value) {
   if (!Array.isArray(value) || value.length > maxPerAccount ||
       value.some(id => !Number.isSafeInteger(id) || id < 1)) throw new Error('Invalid movie IDs')
   return [...new Set(value)]
+}
+
+export function pendingClips(wanted, stored, failures) {
+  const failureTime = id => failures[id]?.at ?? failures[id] ?? 0
+  return [...wanted].filter(id => !stored.has(id))
+    .sort((a, b) => failureTime(a) - failureTime(b))
 }
 
 export function createState(directory) {
@@ -37,11 +42,10 @@ export function createState(directory) {
     wanted() {
       const requests = Object.values(read('requests.json', {}))
       const ids = new Set()
-      for (let index = 0; index < maxPerAccount && ids.size < maxClips; index++) {
+      for (let index = 0; index < maxPerAccount; index++) {
         for (const request of requests) {
           const id = request.ids[index]
           if (id !== undefined) ids.add(id)
-          if (ids.size >= maxClips) break
         }
       }
       return ids

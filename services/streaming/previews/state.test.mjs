@@ -3,7 +3,17 @@ import {mkdtempSync, rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {test} from 'node:test'
-import {createState, maxClips, movieIDs} from './state.mjs'
+import {createState, movieIDs, pendingClips} from './state.mjs'
+
+test('a refresh attempts every missing title, including recent failures', () => {
+  const ids = Array.from({length: 68}, (_, index) => index + 1)
+  const stored = new Set(ids.slice(0, 17))
+  const failures = {18: {at: Date.now(), count: 1}, 19: Date.now() - 1000}
+  assert.deepEqual(
+    pendingClips(new Set(ids), stored, failures),
+    [...ids.slice(19), 19, 18],
+  )
+})
 
 test('a fresh Home snapshot replaces its old titles while another account keeps shared titles', t => {
   const directory = mkdtempSync(join(tmpdir(), 'mirror-preview-state-'))
@@ -22,14 +32,14 @@ test('a fresh Home snapshot replaces its old titles while another account keeps 
   assert.deepEqual(api.clips(), [4, 3])
 })
 
-test('invalid IDs are rejected and the number of eligible objects is capped', t => {
+test('invalid IDs are rejected and all reported titles remain eligible', t => {
   const directory = mkdtempSync(join(tmpdir(), 'mirror-preview-state-'))
   t.after(() => rmSync(directory, {recursive: true}))
   const state = createState(directory)
   const ids = Array.from({length: 320}, (_, index) => index + 1)
   state.record('one', movieIDs(ids))
   state.record('two', [1000])
-  assert.equal(state.wanted().size, maxClips)
+  assert.equal(state.wanted().size, ids.length + 1)
   assert.ok(state.wanted().has(1000))
   for (const value of [[1, -1], [1.5], ['1'], [...ids, 321], {}]) {
     assert.throws(() => movieIDs(value))
