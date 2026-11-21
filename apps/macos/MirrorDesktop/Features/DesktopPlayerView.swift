@@ -5,6 +5,7 @@ import SwiftUI
 
 @MainActor @Observable final class DesktopPlayerController {
   let player = AVPlayer()
+  private let mediaControls = SystemMediaControls()
   var loading = true
   var buffering = false
   var playing = false
@@ -61,6 +62,11 @@ import SwiftUI
   var qualityLabel: String { request?.offline?.quality ?? MovieQuality.label(quality) }
   func start(_ request: DesktopPlayback) {
     self.request = request
+    mediaControls.start(player: player, title: request.movie.title,
+      play: { [weak self] in if let self, !self.wantsPlay { self.toggle() } },
+      pause: { [weak self] in if let self, self.wantsPlay { self.toggle() } },
+      toggle: { [weak self] in self?.toggle() },
+      seek: { [weak self] in self?.seek($0) })
     wantsPlay = UserDefaults.standard.object(forKey: "autoplay") as? Bool ?? true
     quality =
       choices.first(where: { $0.quality == "1080p" })?.quality ?? choices.first?.quality ?? "1080p"
@@ -286,6 +292,7 @@ import SwiftUI
     }
   }
   func stop() {
+    mediaControls.stop()
     save()
     generation = UUID()
     seekGeneration = UUID()

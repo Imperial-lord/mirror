@@ -60,6 +60,7 @@ public struct MirrorVideoPlayerView: View {
     @State private var selectedSpeed: Float = 1.0
     @State private var selectedQuality: String = "Full HD 1080"
     @State private var selectedSubtitle: String = "English"
+    @State private var mediaControls = SystemMediaControls()
     @State private var subtitleTask: Task<Void, Never>?
     @State private var subtitleCues: [SubtitleCue] = []
     @State private var subtitleStatus: String?
@@ -569,6 +570,10 @@ public struct MirrorVideoPlayerView: View {
         avPlayer.automaticallyWaitsToMinimizeStalling = true
         avPlayer.defaultRate = selectedSpeed
         player = avPlayer
+        mediaControls.start(player: avPlayer, title: movie.title,
+            play: { if !isPlaying { togglePlayPause() } },
+            pause: { if isPlaying { togglePlayPause() } },
+            toggle: { togglePlayPause() }, seek: { seek(to: $0) })
         playbackStatus = avPlayer.observe(\.timeControlStatus, options: [.initial, .new]) { player, _ in
             Task { @MainActor in
                 guard self.player === player else { return }
@@ -648,6 +653,7 @@ public struct MirrorVideoPlayerView: View {
         player?.currentItem?.cancelPendingSeeks()
         player?.pause()
         videoSurface.detach()
+        mediaControls.stop()
         player = nil
         hasReadyFrame = false
         bufferedRanges = []
