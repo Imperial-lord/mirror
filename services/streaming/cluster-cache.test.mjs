@@ -55,5 +55,11 @@ test('preloaded source mappings only accept exact hashes and OCI object URLs', (
   const hash = 'a'.repeat(40)
   assert.throws(() => objectSources(JSON.stringify({[hash]: 'https://localhost/private'})))
   assert.throws(() => objectSources(JSON.stringify({bad: 'https://objectstorage.ap-hyderabad-1.oraclecloud.com/p/test/n/name/b/media/o/clip.mp4'})))
-  assert.equal(objectSources(JSON.stringify({[hash]: 'https://objectstorage.ap-hyderabad-1.oraclecloud.com/p/test/n/name/b/media/o/clip.mp4'})).size, 1)
+  const url = new URL('https://objectstorage.ap-hyderabad-1.oraclecloud.com/p/test/n/name/b/media/o/clip.mp4')
+  assert.equal(objectSources(JSON.stringify({[hash]: url.href})).size, 1)
+  url.username = 'fixture'
+  assert.throws(() => objectSources(JSON.stringify({[hash]: url.href})))
+  url.username = ''
+  url.port = '8443'
+  assert.throws(() => objectSources(JSON.stringify({[hash]: url.href})))
 })

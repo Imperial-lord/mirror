@@ -4,9 +4,10 @@ export function objectSources(raw = '{}') {
   const entries = new Map()
   for (const [hash, value] of Object.entries(JSON.parse(raw))) {
     const url = new URL(value)
-    if (!/^[a-f0-9]{40}$/.test(hash) || url.protocol !== 'https:' ||
-      !/^objectstorage\.[a-z0-9-]+\.oraclecloud\.com$/.test(url.hostname) ||
-      url.username || url.password || url.port || !/^\/p\/[^/]+\/n\/[^/]+\/b\/[^/]+\/o\/.+/.test(url.pathname)) {
+    if (!/^[a-f0-9]{40}$/.test(hash) ||
+      !/^https:\/\/objectstorage\.[a-z0-9-]+\.oraclecloud\.com$/.test(url.origin) ||
+      !url.href.startsWith(`${url.origin}/p/`) ||
+      !/^\/p\/[^/]+\/n\/[^/]+\/b\/[^/]+\/o\/.+/.test(url.pathname)) {
       throw new Error('Invalid Mirror Object Storage mapping')
     }
     entries.set(hash, url)
