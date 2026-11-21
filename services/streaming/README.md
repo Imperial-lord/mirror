@@ -43,16 +43,38 @@ Health probe: GET `/health`. Creation errors use 400/401/413/422/502/503/504.
 
 ## Download and storage policy
 
-No full-file selection, disk movie downloads, or persistent movie storage.
-Each session has its own client, largest MP4 file, 128 MiB in-memory LRU piece cache,
+No full-file selection. The single-node default keeps video pieces in memory. A
+worker with `MIRROR_CACHE_DIR` set keeps verified pieces on its own disk across
+sessions and restarts. Mount a writable directory dedicated to that worker. The
+cache caps writes at 12 GiB, reserves 5 GiB of filesystem free space, and evicts
+the least recently used pieces across titles. It is rebuildable and should not
+be backed up. WebTorrent rechecks stored pieces when a torrent is opened.
+
+For two workers, use distinct eight-character hex `MIRROR_NODE_ID` values, the
+other worker's ID as `MIRROR_PEER_ID`, its private HTTP origin as
+`MIRROR_PEER_URL`, and the same randomly generated `MIRROR_PEER_KEY` (at least
+32 characters). Serve public traffic over TLS and restrict the worker HTTP
+ports to the VCN. Session IDs carry the owner's prefix without changing the API
+shape. Either ingress worker can forward range requests or deletes to the
+owner. New sessions prefer a deterministic worker for cache locality and can
+spill to the other if capacity is exhausted. Existing sessions cannot migrate
+after a worker loss; reconnect opens a new session.
+
+Optionally set `MIRROR_OBJECT_SOURCES` in the private server environment to a JSON
+map of exact video source hashes to object-specific OCI read URLs. Keep the
+bucket private, use expiring read grants, and only map authorized copies
+matching the requested quality. Mirror probes the object for byte-range support
+and falls back to the original source if the initial probe fails. Public clients
+receive Mirror session paths and never see the bucket credentials.
+Each torrent session has its own client, largest MP4 file, a shared disk cache or 128 MiB in-memory LRU piece cache,
 and at most four concurrent media requests. Each response selects a 4 MiB window,
 then advances only as HTTP backpressure permits. Cancelling a seek destroys its
 read stream and selection. Complete torrent pieces surrounding requested bytes
 are unavoidable; MP4 metadata may be read from the tail. Watching the entire movie
 will transfer it over time, but older pieces are evicted. Four-session admission
-limit bounds cache storage to 512 MiB plus protocol/read buffers. Idle sessions
+limit bounds in-memory cache storage to 512 MiB plus protocol/read buffers. Idle sessions
 expire after ten minutes; explicit DELETE frees resources immediately. Restarts
-discard all sessions and cached bytes. A player must open a fresh session afterward.
+discard all sessions and RAM-cached bytes. A player must open a fresh session afterward.
 
 The pinned adapter calls WebTorrent's private `_markUnverified(index)` when a stored
 piece is evicted; otherwise its bitfield would advertise bytes that no longer exist.
