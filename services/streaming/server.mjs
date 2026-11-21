@@ -2,7 +2,6 @@ import {existsSync} from 'node:fs'
 import {loadEnvFile} from 'node:process'
 import {fileURLToPath} from 'node:url'
 import http from 'node:http'
-import {randomUUID} from 'node:crypto'
 import WebTorrent from 'webtorrent'
 import {subtitles} from './subtitles.mjs'
 import {catalogParameters, yearCatalog} from './catalog.mjs'
@@ -10,6 +9,9 @@ import {createAISearch, SearchFailure} from './ai-search.mjs'
 import {movieCredits} from './credits.mjs'
 import {PieceCache, byteRange} from './cache.mjs'
 import {serveVideo} from './media.mjs'
+import {diskPieceStore} from './disk-cache.mjs'
+import {clusterRouting} from './cluster.mjs'
+import {objectSources, openObject} from './object-source.mjs'
 import {initializeApp, applicationDefault} from 'firebase-admin/app'
 import {getAuth} from 'firebase-admin/auth'
 const envFile = fileURLToPath(new URL('.env', import.meta.url))
@@ -20,9 +22,15 @@ if (host !== '127.0.0.1' && !project) throw new Error('Public hosting requires F
 if (project) initializeApp({credential: applicationDefault(), projectId: project})
 const aiSearch = createAISearch()
 const sessions = new Map()
+const cluster = clusterRouting()
+const objects = objectSources(process.env.MIRROR_OBJECT_SOURCES)
+const GiB = 1024 ** 3
+const Store = process.env.MIRROR_CACHE_DIR
+  ? await diskPieceStore(process.env.MIRROR_CACHE_DIR, {budget: 12 * GiB, reserve: 5 * GiB})
+  : PieceCache
 const MAX_SESSIONS = 4, TTL = 10 * 60_000
 const json = (res, status, body) => { res.writeHead(status, {'Content-Type':'application/json'}); res.end(JSON.stringify(body)) }
-function dispose(id) { const s = sessions.get(id); if (!s) return; sessions.delete(id); s.client.destroy(() => {}) }
+function dispose(id) { const s = sessions.get(id); if (!s) return; sessions.delete(id); s.client?.destroy(() => {}) }
 async function authenticated(req) {
   if (!project) return {uid:'local-development'}
   const token = req.headers.authorization?.replace(/^Bearer /, '')
@@ -74,19 +82,38 @@ const server = http.createServer(async (req, res) => {
     }
     if (path === '/v1/sessions' && req.method === 'POST') {
       try { await authenticated(req) } catch { return json(res, 401, {error:'Unauthorized'}) }
-      if (sessions.size >= MAX_SESSIONS) return json(res, 503, {error:'Playback capacity reached'})
       let body = ''; for await (const chunk of req) { body += chunk; if (body.length > 2048) return json(res, 413, {error:'Request too large'}) }
       let hash; try { hash = JSON.parse(body).hash } catch { return json(res, 400, {error:'Invalid request'}) }
       if (!/^[a-f0-9]{40}$/i.test(hash ?? '')) return json(res, 400, {error:'Invalid movie hash'})
-      if (sessions.size >= MAX_SESSIONS) return json(res, 503, {error:'Playback capacity reached'})
-      const id = randomUUID(), client = new WebTorrent({utp:false, webSeeds:false})
-      const session = {client, touched:Date.now(), active:0}; sessions.set(id, session)
+      hash = hash.toLowerCase()
+      if (cluster.enabled && !cluster.forwarded(req) && (cluster.prefersPeer(hash) || sessions.size >= MAX_SESSIONS)) {
+        try { if (await cluster.forward(req, res, path, body)) return }
+        catch { if (res.headersSent || res.destroyed) return }
+      }
+      if (sessions.size >= MAX_SESSIONS) {
+        res.setHeader('x-mirror-capacity', 'full')
+        return json(res, 503, {error:'Playback capacity reached'})
+      }
+      const id = cluster.id()
+      const session = {touched:Date.now(), active:0}
+      sessions.set(id, session)
+      const object = objects.get(hash)
+      if (object) {
+        try {
+          session.file = await openObject(object)
+          if (res.destroyed) return dispose(id)
+          return json(res, 201, {id, path:`/v1/sessions/${id}/video.mp4`})
+        } catch { console.warn('Preloaded source unavailable; trying the original source') }
+      }
+      if (res.destroyed) return dispose(id)
+      const client = new WebTorrent({utp:false, webSeeds:false})
+      session.client = client
       const disconnected = () => dispose(id)
       res.on('close', () => { if (!res.writableEnded) disconnected() })
       const timer = setTimeout(() => { if (!res.headersSent) json(res, 504, {error:'Movie unavailable'}); dispose(id) }, 45_000)
       client.on('error', () => { clearTimeout(timer); if (!res.headersSent) json(res, 502, {error:'Movie unavailable'}); dispose(id) })
       const magnet = `magnet:?xt=urn:btih:${hash}&tr=${encodeURIComponent('udp://tracker.opentrackr.org:1337/announce')}&tr=${encodeURIComponent('udp://open.demonii.com:1337/announce')}`
-      const torrent = client.add(magnet, {store:PieceCache, storeOpts:{maxBytes:128*1024*1024}, storeCacheSlots:0, deselect:true}, () => {
+      const torrent = client.add(magnet, {store:Store, storeOpts:{maxBytes:128*1024*1024}, storeCacheSlots:0, deselect:true}, () => {
         clearTimeout(timer)
         if (!sessions.has(id)) return
         const file = torrent.files.filter(f => /\.mp4$/i.test(f.name)).sort((a,b) => b.length-a.length)[0]
@@ -94,7 +121,7 @@ const server = http.createServer(async (req, res) => {
         // Pinned WebTorrent adapter: evicted chunks must be downloaded again on future seeks.
         const store = torrent.store
         const raw = store.store ?? store
-        raw.onEvict = index => torrent._markUnverified(index)
+        raw.onEvict = index => { if (!torrent.destroyed) torrent._markUnverified(index) }
         Object.assign(session, {torrent, file})
         json(res, 201, {id, path:`/v1/sessions/${id}/video.mp4`})
       })
@@ -102,6 +129,14 @@ const server = http.createServer(async (req, res) => {
       return
     }
     const match = /^\/v1\/sessions\/([a-f0-9-]{36})(\/video\.mp4)?$/.exec(path)
+    if (match && !cluster.forwarded(req) && cluster.ownsElsewhere(match[1])) {
+      try {
+        if (await cluster.forward(req, res, path)) return
+      } catch {
+        if (res.headersSent || res.destroyed) return
+        return json(res, 404, {error:'Playback session expired'})
+      }
+    }
     const s = match && sessions.get(match[1])
     if (!s) return json(res, 404, {error:'Playback session expired'})
     s.touched = Date.now()
