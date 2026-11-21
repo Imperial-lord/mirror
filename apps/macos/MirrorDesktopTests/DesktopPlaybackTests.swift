@@ -55,6 +55,32 @@ final class DesktopPlaybackTests: XCTestCase {
   }
 
   @MainActor
+  func testAudioOutputChangePausesWithoutDiscardingPosition() {
+    let controller = DesktopPlayerController()
+    controller.position = 125
+    controller.wantsPlay = true
+    controller.pauseForAudioChange()
+    XCTAssertFalse(controller.wantsPlay)
+    XCTAssertEqual(controller.position, 125)
+    XCTAssertEqual(controller.player.rate, 0)
+    controller.stop()
+  }
+
+  @MainActor
+  func testSleepPreservesIntentAndPositionAndClosedPlaybackDoesNotRestart() {
+    let controller = DesktopPlayerController()
+    controller.position = 240
+    controller.wantsPlay = false
+    controller.suspendForSleep()
+    XCTAssertFalse(controller.wantsPlay)
+    XCTAssertEqual(controller.position, 240)
+    controller.stop()
+    controller.resumeAfterSleep()
+    XCTAssertNil(controller.player.currentItem)
+    XCTAssertFalse(controller.wantsPlay)
+  }
+
+  @MainActor
   func testMuteRestoresTheChosenVolume() {
     let controller = DesktopPlayerController()
     controller.setVolume(0.35)

@@ -23,6 +23,7 @@ public struct MirrorVideoPlayerView: View {
     @State private var seekID = UUID()
     @State private var recoveryTask: Task<Void, Never>?
     @State private var recoveryUsed = false
+    @State private var resumeAfterInterruption = false
     @State private var resumeInForeground = false
     @State private var lastLocalSave: Double?
     @State private var lastCloudSave: Double?
@@ -60,6 +61,7 @@ public struct MirrorVideoPlayerView: View {
     @State private var selectedSpeed: Float = 1.0
     @State private var selectedQuality: String = "Full HD 1080"
     @State private var selectedSubtitle: String = "English"
+    @State private var mediaControls = SystemMediaControls()
     @State private var subtitleTask: Task<Void, Never>?
     @State private var subtitleCues: [SubtitleCue] = []
     @State private var subtitleStatus: String?
@@ -202,6 +204,37 @@ public struct MirrorVideoPlayerView: View {
                 subtitleStatus: subtitleStatus,
                 subtitleOptions: subtitleOptions
             )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification).receive(on: DispatchQueue.main)) { note in
+            guard let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+            if type == .began {
+                resumeAfterInterruption = isPlaying
+                isPlaying = false
+                player?.pause()
+                saveProgress(flush: true)
+                updateBuffering()
+            } else {
+                let options = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
+                let resume = resumeAfterInterruption && options.contains(.shouldResume)
+                resumeAfterInterruption = false
+                setupAudioSession()
+                if resume {
+                    isPlaying = true
+                    if !isPreparing, seekTarget == nil { player?.playImmediately(atRate: selectedSpeed) }
+                    updateBuffering()
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification).receive(on: DispatchQueue.main)) { note in
+            guard let raw = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                  AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+            resumeAfterInterruption = false
+            resumeInForeground = false
+            isPlaying = false
+            player?.pause()
+            saveProgress(flush: true)
+            updateBuffering()
         }
         .onChange(of: selectedSubtitle) { _, _ in loadSubtitles() }
         .onChange(of: isBuffering) { _, _ in updateControlsVisibility() }
@@ -569,6 +602,10 @@ public struct MirrorVideoPlayerView: View {
         avPlayer.automaticallyWaitsToMinimizeStalling = true
         avPlayer.defaultRate = selectedSpeed
         player = avPlayer
+        mediaControls.start(player: avPlayer, title: movie.title,
+            play: { if !isPlaying { togglePlayPause() } },
+            pause: { if isPlaying { togglePlayPause() } },
+            toggle: { togglePlayPause() }, seek: { seek(to: $0) })
         playbackStatus = avPlayer.observe(\.timeControlStatus, options: [.initial, .new]) { player, _ in
             Task { @MainActor in
                 guard self.player === player else { return }
@@ -648,6 +685,7 @@ public struct MirrorVideoPlayerView: View {
         player?.currentItem?.cancelPendingSeeks()
         player?.pause()
         videoSurface.detach()
+        mediaControls.stop()
         player = nil
         hasReadyFrame = false
         bufferedRanges = []
@@ -791,7 +829,7 @@ public struct MirrorVideoPlayerView: View {
             tearDownPlayer()
             playbackService.close()
             isBuffering = false
-            errorMessage = offline == nil ? message : "This downloaded video couldn’t be played."
+            errorMessage = offline == nil ? "\(message) Your position is saved. Try again to resume." : "This downloaded video couldn’t be played."
         }
     }
 
