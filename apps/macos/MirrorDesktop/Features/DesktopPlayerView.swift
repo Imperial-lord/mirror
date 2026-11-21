@@ -267,7 +267,8 @@ import SwiftUI
     if seconds.isFinite { position = max(0, seconds) }
     let length = player.currentItem?.duration.seconds ?? 0
     if length.isFinite, length > 0 { duration = length }
-    caption = cues.first(where: { $0.start <= position && $0.end > position })?.text ?? ""
+    let captionTime = position - UserDefaults.standard.double(forKey: "subtitleTimingOffset")
+    caption = cues.first(where: { $0.start <= captionTime && $0.end > captionTime })?.text ?? ""
     if duration > 0, position >= duration - 0.2 {
       wantsPlay = false
       player.pause()
@@ -398,6 +399,9 @@ final class DesktopPlayerCursor {
 }
 
 struct DesktopPlayerView: View {
+  @AppStorage("subtitleFontSize") private var subtitleSize = 18.0
+  @AppStorage("subtitleBackgroundOpacity") private var subtitleOpacity = 0.65
+  @AppStorage("subtitleBottomInset") private var subtitleInset = 0.0
   @Environment(DesktopSession.self) private var session
   @Environment(\.modelContext) private var context
   @State private var model = DesktopPlayerController()
@@ -438,15 +442,15 @@ struct DesktopPlayerView: View {
       if !model.caption.isEmpty {
         VStack {
           Spacer()
-          Text(model.caption).font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
-            .multilineTextAlignment(.center).lineLimit(3).padding(.horizontal, 20).padding(
+          Text(model.caption).font(.system(size: subtitleSize, weight: .medium)).foregroundStyle(.white)
+            .multilineTextAlignment(.center).padding(.horizontal, 20).padding(
               .vertical, 6
             )
-            .background(.black.opacity(0.48), in: RoundedRectangle(cornerRadius: 5)).shadow(
+            .background(.black.opacity(subtitleOpacity), in: RoundedRectangle(cornerRadius: 5)).shadow(
               color: .black, radius: 2
             )
             .frame(maxWidth: 850)
-        }.padding(.bottom, controls ? 144 : 55).padding(.horizontal, 65).allowsHitTesting(false)
+        }.padding(.bottom, (controls ? 144 : 55) + subtitleInset).padding(.horizontal, 65).allowsHitTesting(false)
       }
       if showsChrome {
         chrome.transition(.opacity)
@@ -690,6 +694,7 @@ struct DesktopPlayerView: View {
   private var playerSettings: some View {
     VStack(alignment: .leading, spacing: 19) {
       Text("Playback settings").font(.headline)
+      DisclosureGroup("Subtitle customization") { SubtitleAppearanceSettings().padding(.vertical, 8) }
       if model.offline {
         HStack {
           Text("Video quality")
