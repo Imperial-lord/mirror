@@ -36,6 +36,7 @@ struct MirrorDesktopApp: App {
       }
       .preferredColorScheme((DesktopTheme(rawValue: theme) ?? .dark).scheme)
       .frame(minWidth: 980, minHeight: 680)
+      .background(DesktopWindowChrome())
       .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
     }
     .defaultSize(width: 1380, height: 900)

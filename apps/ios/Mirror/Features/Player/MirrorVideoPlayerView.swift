@@ -958,7 +958,7 @@ public struct MirrorVideoPlayerView: View {
 
 // Wait until the fullscreen cover is attached to its scene before requesting rotation.
 // Keeping this tied to the controller lifetime also preserves landscape over settings sheets.
-private struct PlayerOrientationBridge: UIViewControllerRepresentable {
+struct PlayerOrientationBridge: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> OrientationController { OrientationController() }
     func updateUIViewController(_ uiViewController: OrientationController, context: Context) {}
 

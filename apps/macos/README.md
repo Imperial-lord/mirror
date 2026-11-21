@@ -20,9 +20,10 @@ For experimental sharing without a paid Apple account, see [the opt-in portable 
 
 - Optional conversational [AI search](../../docs/ai-search.md) in Catalog, with real catalogue suggestions, follow-ups, local chat history and watched-title exclusion. Requires the updated backend and its server-only Groq key.
 - Desktop sidebar, resizable layouts, keyboard navigation and macOS sharing menus.
+- Double-click the empty top bar to enter or leave native fullscreen; single-click dragging and window buttons keep their normal behavior.
 - Sign-in, sign-up with the same temporary four-digit verification step as iOS, password reset, Google sign-in, session persistence and profile management. Apple remains the existing placeholder.
 - Live home collections and watch-history recommendations; catalog search, partial-title matching, genres, country, studio, year, rating and sorting.
-- Movie details, trailers, Wikimedia-only credits/biographies and filmography navigation.
+- Movie details, in-app YouTube trailers, Wikimedia-only credits/biographies and filmography navigation. Trailers use an isolated WebKit viewer with native YouTube controls, retry and dismissal cleanup; videos restricted from embedding show an in-app unavailable message.
 - Firestore Favorites and playlists, editing membership, renaming/removing folders, and history shared with iOS. Watched means strictly more than 95% of the movie duration.
 - OCI HTTP-range playback, fullscreen by default, seeking, volume/speed/quality controls, subtitles and watch progress synchronization.
 - Local resumable downloads with quality replacement and multiple saved subtitle languages; offline playback restricts choices to what is saved on this Mac. Keep the app running to continue the download queue; interrupted work can be resumed after relaunch.
@@ -43,6 +44,8 @@ The native desktop UI lives only under `MirrorDesktop/`. Portable catalog/histor
 | Escape | Leave fullscreen, then return to the movie page |
 
 ## Tests
+
+Before pushing desktop UI changes, build and test on macOS and inspect the affected views in both light and dark appearance. `DesktopHistoryLayoutTests` renders the native history cards and menus, checks compact sizing and icon contrast, and saves image attachments in the test results for visual review.
 
 From the repository root, `bash scripts/test-macos.sh` runs the suite with only local Firebase emulators (`demo-mirror-auth`). The suite covers account/profile persistence, strict watch completion, account-scoped history, real HTTP video/seek behavior, download resume/replacement, saved subtitle choices and playback cleanup. Generated clips are local fixtures; tests do not fetch a public movie torrent or use production accounts.
 

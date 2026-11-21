@@ -44,6 +44,7 @@ targets:
       - path: ../ios/Mirror/Features/MovieDetail/MovieDetailViewModel.swift
       - path: ../ios/Mirror/Features/Player/PlaybackService.swift
       - path: ../ios/Mirror/Features/Player/Subtitles.swift
+      - path: ../ios/Mirror/Features/Player/TrailerPlayer.swift
       - path: ../ios/Mirror/Features/Downloads/OfflineDownload.swift
       - path: ../ios/Mirror/Features/Downloads/OfflineVideoOptimizer.swift
     settings:

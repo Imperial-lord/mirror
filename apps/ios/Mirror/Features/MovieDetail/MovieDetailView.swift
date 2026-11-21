@@ -6,6 +6,7 @@ public struct MovieDetailView: View {
     @Environment(\.colorScheme) private var scheme
     @State private var viewModel: MovieDetailViewModel
     @State private var playbackRequestedAt = ContinuousClock.now
+    @State private var trailer: MovieTrailer?
 
     public init(movieId: Int) {
         _viewModel = State(initialValue: MovieDetailViewModel(movieId: movieId))
@@ -116,6 +117,7 @@ public struct MovieDetailView: View {
                 MirrorVideoPlayerView(movie: movie, requestedAt: playbackRequestedAt)
             }
         }
+        .fullScreenCover(item: $trailer) { TrailerPlayerView(trailer: $0) }
         .task {
             if case .idle = viewModel.state {
                 await viewModel.loadDetails()
@@ -310,14 +312,14 @@ public struct MovieDetailView: View {
     // MARK: - 2. Trailers and Teasers
     @ViewBuilder
     private func trailersSection(movie: MovieDetail) -> some View {
-        if let code = movie.ytTrailerCode, !code.isEmpty,
-           let url = URL(string: "https://www.youtube.com/watch?v=\(code)") {
+        if let availableTrailer = movie.trailer {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Trailers and Teasers").font(.system(size: 16, weight: .medium))
                     .padding(.horizontal, Spacing.md)
-                Link(destination: url) {
+                Button { trailer = availableTrailer } label: {
                     trailerCard(title: "Official Trailer", imageURL: movie.screenshots.first ?? movie.backdropURL ?? movie.posterURL)
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal, Spacing.md)
             }
         }
