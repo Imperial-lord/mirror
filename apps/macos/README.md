@@ -25,7 +25,7 @@ For experimental sharing without a paid Apple account, see [the opt-in portable 
 - Live home collections and watch-history recommendations; catalog search, partial-title matching, genres, country, studio, year, rating and sorting.
 - Movie details, in-app YouTube trailers, Wikimedia-only credits/biographies and filmography navigation. Trailers use an isolated WebKit viewer with native YouTube controls, retry and dismissal cleanup; videos restricted from embedding show an in-app unavailable message.
 - Firestore Favorites and playlists, editing membership, renaming/removing folders, and history shared with iOS. Watched means strictly more than 95% of the movie duration.
-- OCI HTTP-range playback, fullscreen by default, seeking, volume/speed/quality controls, subtitles and watch progress synchronization.
+- OCI HTTP-range playback, fullscreen by default, seeking, volume/speed/quality controls, subtitles and watch progress synchronization. Playback settings offer Mac-only subtitle text size, background opacity, vertical placement and timing adjustments, saved on this device.
 - Local resumable downloads with quality replacement and multiple saved subtitle languages; offline playback restricts choices to what is saved on this Mac. Keep the app running to continue the download queue; interrupted work can be resumed after relaunch.
 - Functional dark/light/system appearance, autoplay, real disk usage and download removal.
 
