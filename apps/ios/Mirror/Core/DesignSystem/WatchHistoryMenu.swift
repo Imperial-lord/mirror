@@ -22,13 +22,21 @@ struct WatchHistoryMenu: View {
         if removing {
           ProgressView().controlSize(.small)
         } else {
+          #if os(macOS)
+          // AppKit menu labels must not bridge a resizable asset at its source size.
+          Image(systemName: "ellipsis")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(.secondary)
+          #else
           PhosphorView(.more, size: 16, color: .mirrorTextSecondary)
+          #endif
         }
       }.frame(width: 28, height: 28).contentShape(Rectangle())
     }
     #if os(macOS)
       .menuStyle(.borderlessButton)
       .menuIndicator(.hidden)
+      .frame(width: 28, height: 28)
     #endif
     .fixedSize()
     .disabled(removing)

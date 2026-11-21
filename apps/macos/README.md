@@ -45,6 +45,8 @@ The native desktop UI lives only under `MirrorDesktop/`. Portable catalog/histor
 
 ## Tests
 
+Before pushing desktop UI changes, build and test on macOS and inspect the affected views in both light and dark appearance. `DesktopHistoryLayoutTests` renders the native history cards and menus, checks compact sizing and icon contrast, and saves image attachments in the test results for visual review.
+
 From the repository root, `bash scripts/test-macos.sh` runs the suite with only local Firebase emulators (`demo-mirror-auth`). The suite covers account/profile persistence, strict watch completion, account-scoped history, real HTTP video/seek behavior, download resume/replacement, saved subtitle choices and playback cleanup. Generated clips are local fixtures; tests do not fetch a public movie torrent or use production accounts.
 
 CI bootstraps dummy configuration with `python3 scripts/bootstrap-ios.py --ci --platform macos`. CI runs unit, HTTP playback, download and history tests plus a Release build without production credentials. It also runs the full portable suite, including authentication/session persistence, with login Keychain and local Firebase emulators. The normal build's protected-Keychain authentication tests still require local development signing. Distribution signing/notarization is separate from this local development build.
