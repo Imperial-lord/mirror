@@ -83,7 +83,8 @@ struct DesktopClipHover: ViewModifier {
       }
       .task(id: hovering && scenePhase == .active ? clip : nil) {
         guard hovering, scenePhase == .active, let clip else { return }
-        do { try await Task.sleep(for: .seconds(1)) } catch { return }
+        do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+        guard session.preview?.id != previewID else { return }
         session.showPreview(selection(previewID, clip))
       }
       .anchorPreference(key: DesktopPreviewAnchor.self, value: .bounds) { anchor in
@@ -120,15 +121,25 @@ struct DesktopPreviewLayer: View {
           presentDownload(for: selection, detail: detail)
         }
           .frame(width: width, height: height)
-          .position(x: x, y: y)
           .id(selection.id)
           .onChange(of: bounds) { session.closePreview(selection.id) }
-          .transition(reduceMotion ? .opacity : .scale(scale: 0.96).combined(with: .opacity))
+          .transition(cardTransition(from: bounds, x: x, y: y))
+          .position(x: x, y: y)
       }
     }
-    .animation(.easeOut(duration: reduceMotion ? 0.12 : 0.22), value: session.preview?.id)
+    .animation(.easeInOut(duration: reduceMotion ? 0.12 : 0.32), value: session.preview?.id)
     .sheet(item: $downloadMovie) { DesktopDownloadSheet(movie: $0) }
     .onDisappear { downloadTask?.cancel() }
+  }
+
+  private func cardTransition(from bounds: CGRect, x: CGFloat, y: CGFloat) -> AnyTransition {
+    guard !reduceMotion else { return .opacity }
+    return .asymmetric(
+      insertion: .scale(scale: 0.84)
+        .combined(with: .offset(x: bounds.midX - x, y: bounds.midY - y + 8))
+        .combined(with: .opacity),
+      removal: .opacity.animation(.easeOut(duration: 0.16))
+    )
   }
 
   private func presentDownload(for selection: DesktopPreviewSelection, detail: MovieDetail?) {
@@ -164,9 +175,12 @@ struct DesktopPreviewCard: View {
   @State private var clipReady = false
   @State private var detail: MovieDetail?
   @State private var savingFavorite = false
-  @State private var addedFavorite = false
+  @State private var pendingFavorite: Bool?
+  private var storedFavorite: Bool {
+    LibraryStore.shared.favorites.contains { $0.id == selection.movieID }
+  }
   private var isFavorite: Bool {
-    addedFavorite || LibraryStore.shared.favorites.contains { $0.id == selection.movieID }
+    pendingFavorite ?? storedFavorite
   }
   private var metadata: DesktopPreviewMetadata {
     detail.map(DesktopPreviewMetadata.init) ?? selection.metadata
@@ -236,11 +250,12 @@ struct DesktopPreviewCard: View {
         }.buttonStyle(.plain)
           .help("\(selection.playTitle) movie")
           .accessibilityLabel("\(selection.playTitle) movie")
-        Button(action: addFavorite) {
-          actionIcon(isFavorite || savingFavorite ? .check : .add)
+        Button(action: toggleFavorite) {
+          actionIcon(isFavorite ? .check : .add)
         }.buttonStyle(.plain)
-          .help(isFavorite ? "In Favorites" : "Add to Favorites")
-          .accessibilityLabel(isFavorite ? "In Favorites" : "Add to Favorites")
+          .disabled(savingFavorite)
+          .help(isFavorite ? "Remove from Favorites" : "Add to Favorites")
+          .accessibilityLabel(isFavorite ? "Remove from Favorites" : "Add to Favorites")
           .accessibilityAddTraits(isFavorite ? .isSelected : [])
         Button {
           download(detail)
@@ -284,6 +299,9 @@ struct DesktopPreviewCard: View {
       session.updatePreviewHover(selection.id, inside: inside, overCard: true)
     }
     .onExitCommand { session.closePreview(selection.id) }
+    .onChange(of: storedFavorite) { _, favorite in
+      if pendingFavorite == favorite { pendingFavorite = nil }
+    }
     .onChange(of: session.preview?.id) { _, id in
       if id != selection.id {
         clipReady = false
@@ -313,22 +331,31 @@ struct DesktopPreviewCard: View {
       .contentShape(Circle())
   }
 
-  private func addFavorite() {
-    guard !isFavorite, !savingFavorite else { return }
+  private func toggleFavorite() {
+    guard !savingFavorite else { return }
     guard AuthService.shared.isAuthenticated else {
       session.closePreview(selection.id)
       session.showSignIn = true
       return
     }
     savingFavorite = true
+    let shouldFavorite = !isFavorite
+    pendingFavorite = shouldFavorite
     let movie = detail.map(SavedMovie.init(movie:)) ?? selection.favorite
     Task {
       defer { savingFavorite = false }
       do {
-        try await LibraryStore.shared.addFavorite(movie)
-        addedFavorite = true
+        if shouldFavorite {
+          try await LibraryStore.shared.addFavorite(movie)
+        } else {
+          try await LibraryStore.shared.remove(movie: movie, from: nil)
+        }
+        if storedFavorite == shouldFavorite { pendingFavorite = nil }
       } catch {
-        session.error = "Couldn’t add this movie to Favorites. Please try again."
+        pendingFavorite = nil
+        session.error = shouldFavorite
+          ? "Couldn’t add this movie to Favorites. Please try again."
+          : "Couldn’t remove this movie from Favorites. Please try again."
       }
     }
   }
