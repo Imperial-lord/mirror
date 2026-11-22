@@ -16,6 +16,27 @@ export function pendingClips(wanted, stored, failures) {
     .sort((a, b) => failureTime(a) - failureTime(b))
 }
 
+function rowFolder(row) {
+  return row.startsWith('genre-') ? `genres/${row.slice(6)}` : row
+}
+
+export function previewLayout(rows) {
+  const targets = {}
+  for (const [row, ids] of Object.entries(rows.catalog)) {
+    for (const id of ids) (targets[id] ??= []).push(`${rowFolder(row)}/${id}.mp4`)
+  }
+  for (const [account, report] of Object.entries(rows)) {
+    if (account === 'catalog') continue
+    for (const id of report['reported-home']) targets[id] ??= [`reported-home/${id}.mp4`]
+  }
+  const indexes = Object.fromEntries(Object.entries(rows).map(([owner, lists]) => [
+    owner, Object.fromEntries(Object.entries(lists).map(([row, ids]) => [
+      row, ids.map(id => owner === 'catalog' ? `${rowFolder(row)}/${id}.mp4` : targets[id][0]),
+    ])),
+  ]))
+  return {targets, indexes}
+}
+
 export function createState(directory) {
   mkdirSync(directory, {recursive: true})
   const read = (name, fallback) => {
@@ -61,6 +82,11 @@ export function createState(directory) {
     },
     clips: () => read('clips.json', []),
     publish: ids => write('clips.json', [...ids]),
+    locations: () => read('locations.json', null),
+    publishLocations(locations) {
+      write('locations.json', locations)
+      write('clips.json', Object.keys(locations).map(Number))
+    },
     failures: () => read('failures.json', {}),
     saveFailures: failures => write('failures.json', failures),
   }

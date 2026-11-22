@@ -152,7 +152,10 @@ each account's latest authenticated Home report, which supplies Selected For
 You and Continue Watching. The server returns ready clips only for IDs in the
 app's request. A title without a ready clip keeps its artwork.
 
-A title listed in multiple rows uses one MP4 at `home/v1/<movie-id>.mp4`.
+The worker stores MP4s under prefixes such as `home/v1/popular-now/`,
+`home/v1/top-rated/`, and `home/v1/genres/action/`. Movies reported by an
+account outside the shared rows use `home/v1/reported-home/`. The worker
+encodes each title once and copies the clip into each matching folder.
 Private indexes at `home/rows/v1/catalog.json` and
 `home/rows/v1/<account-hash>.json` map the catalog rows and account reports to
 those object names, including pending clips. The clip read URL only covers

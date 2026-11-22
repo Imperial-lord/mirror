@@ -3,7 +3,21 @@ import {mkdtempSync, rmSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {test} from 'node:test'
-import {createState, maxPerAccount, movieIDs, pendingClips} from './state.mjs'
+import {createState, maxPerAccount, movieIDs, pendingClips, previewLayout} from './state.mjs'
+
+test('a movie appears in each matching row folder using one encoding job', () => {
+  const {targets, indexes} = previewLayout({
+    catalog: {'popular-now': [1, 2], 'top-rated': [1], 'genre-sci-fi': [1]},
+    account: {'reported-home': [1, 3]},
+  })
+  assert.deepEqual(targets, {
+    1: ['popular-now/1.mp4', 'top-rated/1.mp4', 'genres/sci-fi/1.mp4'],
+    2: ['popular-now/2.mp4'],
+    3: ['reported-home/3.mp4'],
+  })
+  assert.deepEqual(indexes.catalog['genre-sci-fi'], ['genres/sci-fi/1.mp4'])
+  assert.deepEqual(indexes.account['reported-home'], ['popular-now/1.mp4', 'reported-home/3.mp4'])
+})
 
 test('the worker includes every catalog row before the app reports any discovery rows', t => {
   const directory = mkdtempSync(join(tmpdir(), 'mirror-preview-state-'))

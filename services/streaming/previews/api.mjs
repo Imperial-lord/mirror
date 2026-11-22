@@ -44,9 +44,10 @@ createServer(async (req, res) => {
   try {
     const account = createHash('sha256').update(uid).digest('hex')
     state.record(account, ids)
-    const ready = new Set(state.clips())
-    const entries = ids.filter(id => ready.has(id))
-      .map(id => [id, new URL(`${id}.mp4`, origin).href])
+    const locations = state.locations() ??
+      Object.fromEntries(state.clips().map(id => [id, `${id}.mp4`]))
+    const entries = ids.filter(id => locations[id])
+      .map(id => [id, new URL(locations[id], origin).href])
     return json(res, 200, Object.fromEntries(entries))
   } catch {
     return json(res, 503, {})
