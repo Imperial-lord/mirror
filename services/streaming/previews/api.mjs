@@ -21,7 +21,10 @@ function json(res, status, value) {
 }
 
 createServer(async (req, res) => {
-  if (req.method !== 'POST' || req.url !== '/v1/home-previews') return json(res, 404, {})
+  const [path, query] = req.url.split('?', 2)
+  if (path !== '/v1/home-previews' || !['GET', 'POST'].includes(req.method)) {
+    return json(res, 404, {})
+  }
   let uid
   try {
     const match = /^Bearer (.+)$/.exec(req.headers.authorization ?? '')
@@ -31,19 +34,25 @@ createServer(async (req, res) => {
 
   let ids
   try {
-    const chunks = []
-    let size = 0
-    for await (const chunk of req) {
-      size += chunk.length
-      if (size > 8192) return json(res, 413, {})
-      chunks.push(chunk)
+    if (req.method === 'GET') {
+      ids = movieIDs([Number(new URLSearchParams(query).get('movie_id'))])
+    } else {
+      const chunks = []
+      let size = 0
+      for await (const chunk of req) {
+        size += chunk.length
+        if (size > 8192) return json(res, 413, {})
+        chunks.push(chunk)
+      }
+      ids = movieIDs(JSON.parse(Buffer.concat(chunks)))
     }
-    ids = movieIDs(JSON.parse(Buffer.concat(chunks)))
   } catch { return json(res, 400, {}) }
 
   try {
-    const account = createHash('sha256').update(uid).digest('hex')
-    state.record(account, ids)
+    if (req.method === 'POST') {
+      const account = createHash('sha256').update(uid).digest('hex')
+      state.record(account, ids)
+    }
     const locations = state.locations() ??
       Object.fromEntries(state.clips().map(id => [id, `${id}.mp4`]))
     const entries = ids.filter(id => locations[id])
