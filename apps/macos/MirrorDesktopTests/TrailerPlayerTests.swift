@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import WebKit
 import XCTest
 
@@ -100,6 +101,83 @@ import XCTest
     try await Task.sleep(for: .milliseconds(100))
     XCTAssertEqual(player.state, .ready)
   }
+  func testHoverCardStaysOpenWhenPointerMovesFromPosterIntoCard() async throws {
+    let movie = try JSONDecoder().decode(Movie.self, from: Data("""
+      {"id":1,"url":"","imdb_code":"tt1234567","title":"Fixture","year":2024,"rating":7,"runtime":100}
+      """.utf8))
+    let session = DesktopSession()
+    let id = UUID()
+    session.showPreview(DesktopPreviewSelection(id: id, movie: movie, clip: URL(fileURLWithPath: "/fixture.mp4")))
+    session.updatePreviewHover(id, inside: true, overCard: true)
+    session.updatePreviewHover(id, inside: false, overCard: false)
+    try await Task.sleep(for: .milliseconds(275))
+    XCTAssertEqual(session.preview?.id, id)
+    session.updatePreviewHover(id, inside: false, overCard: true)
+    try await until { session.preview == nil }
+  }
+
+  func testHomePreviewCardRendersMetadataAndActionsInBothAppearances() throws {
+    let movie = try JSONDecoder().decode(Movie.self, from: Data("""
+      {"id":1,"url":"https://example.com/movie","imdb_code":"tt1234567",
+       "title":"Kung Fu Panda 3","year":2016,"rating":7.1,"runtime":95,"language":"en",
+       "genres":["Action","Adventure","Animation","Comedy","Family","Fantasy"]}
+      """.utf8))
+    let selection = DesktopPreviewSelection(
+      id: UUID(), movie: movie, clip: URL(fileURLWithPath: "/fixture.mp4"))
+    for dark in [false, true] {
+      let card = DesktopPreviewCard(selection: selection, download: { _ in })
+        .frame(width: 448, height: 324)
+        .padding(24)
+        .background(Color.mirrorBackground)
+        .environment(DesktopSession())
+        .environment(\.colorScheme, dark ? .dark : .light)
+      let host = NSHostingView(rootView: card)
+      let window = NSWindow(
+        contentRect: NSRect(origin: .zero, size: host.fittingSize), styleMask: [.borderless],
+        backing: .buffered, defer: false)
+      window.isReleasedWhenClosed = false
+      window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+      window.contentView = host
+      defer { window.close() }
+      window.displayIfNeeded()
+      host.layoutSubtreeIfNeeded()
+      let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+      host.cacheDisplay(in: host.bounds, to: bitmap)
+      let image = NSImage(size: host.bounds.size)
+      image.addRepresentation(bitmap)
+      let attachment = XCTAttachment(image: image)
+      attachment.name = dark ? "Home preview dark" : "Home preview light"
+      attachment.lifetime = .keepAlways
+      add(attachment)
+    }
+  }
+
+  func testClickingPreviewMediaStartsMoviePlaybackFlow() async throws {
+    let item = WatchHistoryItem(movieId: 1, title: "Movie", posterURL: nil, runtime: 100)
+    let selection = DesktopPreviewSelection(
+      id: UUID(), history: item, clip: URL(fileURLWithPath: "/fixture.mp4"))
+    let session = DesktopSession()
+    let card = DesktopPreviewCard(selection: selection, download: { _ in })
+      .frame(width: 448, height: 324).environment(session)
+    let window = NSWindow(
+      contentRect: NSRect(x: 120, y: 120, width: 448, height: 324),
+      styleMask: [.titled, .closable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = NSHostingView(rootView: card)
+    window.makeKeyAndOrderFront(nil)
+    defer { window.close() }
+    window.displayIfNeeded()
+    for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+      let event = try XCTUnwrap(NSEvent.mouseEvent(
+        with: type, location: NSPoint(x: 224, y: 198), modifierFlags: [],
+        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+        context: nil, eventNumber: 1, clickCount: 1, pressure: 1))
+      NSApp.postEvent(event, atStart: false)
+    }
+    // The test host is signed out, so the normal playback action opens sign-in.
+    try await until { session.showSignIn }
+  }
+
   /// Explicit opt-in only; ordinary CI uses local HTML fixtures and never depends on YouTube.
   func testLiveTrailerPlaybackWhenEnabled() async throws {
     try XCTSkipUnless(ProcessInfo.processInfo.environment["MIRROR_LIVE_TRAILER_TEST"] == "1")

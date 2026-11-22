@@ -84,6 +84,7 @@ struct DesktopAccountView: View {
 struct DesktopSettingsView: View {
   @AppStorage("mirrorTheme") private var theme = DesktopTheme.dark.rawValue
   @AppStorage("autoplay") private var autoplay = true
+  @AppStorage("desktopPreviewAutoplay") private var autoplayPreviews = true
   @State private var deleteDownloads = false
   @State private var error: String?
   @State private var usage: (downloads: Int64, used: Int64, free: Int64) = (0, 0, 0)
@@ -124,6 +125,7 @@ struct DesktopSettingsView: View {
                 Color.mirrorTextTertiary)
             }
           }.toggleStyle(.switch).tint(Color.mirrorInk)
+          Toggle("Autoplay previews", isOn: $autoplayPreviews).toggleStyle(.switch).tint(Color.mirrorInk)
           Divider().overlay(Color.mirrorInk.opacity(0.1))
           Text("Space to pause · ← / → to skip 10 seconds · F for full screen · Esc to go back")
             .font(.caption).foregroundStyle(Color.mirrorTextSecondary)

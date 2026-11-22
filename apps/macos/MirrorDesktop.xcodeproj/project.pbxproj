@@ -51,6 +51,7 @@
 		7FDE74C58104D24B2960DE3E /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3C8E6C8E761F888A7C656F7B /* FirebaseFirestore */; };
 		88543DCBDFBC1D9CCFA5E95F /* CatalogMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF9C2E9B9F109A4C8592433 /* CatalogMetadataService.swift */; };
 		908CD9B3CCD0EC4FB962A94C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F12E4D8EC6F532CC667D76CF /* Assets.xcassets */; };
+		90A5E9DE4F48856E86070EA2 /* DesktopPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A54CBE349E2AF96A2B42E809 /* DesktopPreviews.swift */; };
 		90D7450AC61D463BCEEB4F55 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1445FC6CF516DCFC4BF6D771 /* SearchViewModel.swift */; };
 		929647C7E7CE971A1D953D8F /* DesktopHistoryLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A61242F935D7E6CE8415E8 /* DesktopHistoryLayoutTests.swift */; };
 		95820838C26252B5BD983D9C /* DesktopAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C70B197320211391C2EE0DC /* DesktopAuthView.swift */; };
@@ -146,6 +147,7 @@
 		92E7AC8CEB0C778126108E74 /* SystemMediaControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMediaControls.swift; sourceTree = "<group>"; };
 		9E64358E0E020DA0EB889E63 /* PlaybackRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackRecoveryTests.swift; sourceTree = "<group>"; };
 		A055BADF27B7E6F6577D4141 /* DesktopPlayerCursorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopPlayerCursorTests.swift; sourceTree = "<group>"; };
+		A54CBE349E2AF96A2B42E809 /* DesktopPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopPreviews.swift; sourceTree = "<group>"; };
 		A98C8A9F881E70178F62FA36 /* WatchlistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistItem.swift; sourceTree = "<group>"; };
 		AB364E0A93FE6D3AC1587007 /* AISearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISearchService.swift; sourceTree = "<group>"; };
 		AC36A573B5AD901A6B710432 /* MovieTrailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieTrailer.swift; sourceTree = "<group>"; };
@@ -319,6 +321,7 @@
 				AF2139BCAE41C63D17979A99 /* DesktopLibraryViews.swift */,
 				42CCB941AD164E50540C165A /* DesktopMovieView.swift */,
 				3DE178F35B9FB91DAAD74BAE /* DesktopPlayerView.swift */,
+				A54CBE349E2AF96A2B42E809 /* DesktopPreviews.swift */,
 				051A76C6A10234B40AEDC855 /* DesktopUpdatePanel.swift */,
 				6DDED79B85E08CF58A5D93CD /* SubtitleAppearance.swift */,
 				CCB28E1CB54531AC54C80852 /* AISearch */,
@@ -605,6 +608,7 @@
 				667B1D7B7A8BDBC838D27FE4 /* DesktopLibraryViews.swift in Sources */,
 				47D68E86BA24F8E2DDCD1860 /* DesktopMovieView.swift in Sources */,
 				504F1057266BDFDDFBD4D4E2 /* DesktopPlayerView.swift in Sources */,
+				90A5E9DE4F48856E86070EA2 /* DesktopPreviews.swift in Sources */,
 				1487C30C4701B9047487D9A4 /* DesktopRootView.swift in Sources */,
 				E45CF6785F4E8EC75E832D9F /* DesktopSession.swift in Sources */,
 				381DBDE06F3355AC6FA5E6DD /* DesktopTheme.swift in Sources */,
