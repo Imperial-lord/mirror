@@ -87,9 +87,51 @@ final class PlaybackService {
         return try JSONDecoder().decode(SubtitleTrack.self, from: data)
     }
 
-    private func baseURL() throws -> URL {
-        let configured = UserDefaults.standard.string(forKey: "PlaybackServiceURL")
+    static func homePreview(movieID: Int) async throws -> URL? {
+        guard let endpoint = homePreviewsEndpoint,
+              var url = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else { return nil }
+        url.queryItems = [URLQueryItem(name: "movie_id", value: String(movieID))]
+        guard let lookupURL = url.url else { return nil }
+        return try await fetchHomePreviews(URLRequest(url: lookupURL), movieIDs: [movieID])[movieID]
+    }
+
+    static func reportHomePreviews(_ ids: [Int]) async throws -> [Int: URL] {
+        guard let endpoint = homePreviewsEndpoint else { return [:] }
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(Array(ids.prefix(320)))
+        return try await fetchHomePreviews(request, movieIDs: Set(ids))
+    }
+
+    private static var homePreviewsEndpoint: URL? {
+        guard let configured = configuredBaseAddress, let base = URL(string: configured),
+              base.scheme == "https", base.host != nil else { return nil }
+        return base.appendingPathComponent("v1/home-previews")
+    }
+
+    private static func fetchHomePreviews(_ request: URLRequest, movieIDs: Set<Int>) async throws -> [Int: URL] {
+        guard let user = Auth.auth().currentUser else { return [:] }
+        var request = request
+        request.timeoutInterval = 8
+        request.setValue("Bearer \(try await user.getIDToken())", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200, data.count < 512 * 1024
+        else { throw URLError(.badServerResponse) }
+        let clips = try JSONDecoder().decode([Int: URL].self, from: data)
+        return clips.filter { id, url in
+            guard let host = url.host, url.scheme == "https", movieIDs.contains(id) else { return false }
+            return host.hasPrefix("objectstorage.") && host.hasSuffix(".oraclecloud.com")
+        }
+    }
+
+    private static var configuredBaseAddress: String? {
+        UserDefaults.standard.string(forKey: "PlaybackServiceURL")
             ?? Bundle.main.object(forInfoDictionaryKey: "PlaybackServiceURL") as? String
+    }
+
+    private func baseURL() throws -> URL {
+        let configured = Self.configuredBaseAddress
         #if targetEnvironment(simulator)
         let address = configured ?? "http://127.0.0.1:8787"
         #else

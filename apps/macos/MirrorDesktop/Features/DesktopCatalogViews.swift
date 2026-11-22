@@ -164,7 +164,7 @@ struct DesktopHomeView: View {
         guard accountID != nil, !ids.isEmpty else { return }
         do { try await Task.sleep(for: .seconds(1)) } catch { return }
         while !Task.isCancelled {
-          if let current = try? await DesktopHomePreviewRequest.refresh(ids), !Task.isCancelled {
+          if let current = try? await PlaybackService.reportHomePreviews(ids), !Task.isCancelled {
             previewURLs = current
           }
           let refreshDelay: Duration = previewURLs.isEmpty ? .seconds(30) : .seconds(180)

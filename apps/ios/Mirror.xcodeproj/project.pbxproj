@@ -93,6 +93,7 @@
 		BCC0D5C64A68C4BD3942688E /* DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D214370F43E90B0B6B3589B /* DevicesView.swift */; };
 		BDB7BEBD0AC3EC4F519B191F /* HeroBannerCarousel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4A6A22B5C9A255DA7E9B5F /* HeroBannerCarousel.swift */; };
 		C2EAAB10CCC36E3EDAF90EEA /* LandscapeMovieCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8A65D0A8AE7388196276B3 /* LandscapeMovieCard.swift */; };
+		C325F30A533B64A001B11BF3 /* MovieDetailHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE2B44256AE45B5837AF46A /* MovieDetailHero.swift */; };
 		CC2FFE478B6EC2A0A2D391BC /* TrailerPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A931E2DF1D62471728A2DC7 /* TrailerPlayerTests.swift */; };
 		CF9CB7449E4E951C02902658 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7BCAC5F21FE148BA5469 /* DownloadStore.swift */; };
 		D0095F7129C96D387F305544 /* ProfileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E52D130F20A2D895E5AE8C /* ProfileEditorView.swift */; };
@@ -150,6 +151,7 @@
 		213E42F49466DABFD3C13EC3 /* Phosphor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Phosphor.swift; sourceTree = "<group>"; };
 		25E222E4A4F35DB637D539E6 /* MirrorChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorChip.swift; sourceTree = "<group>"; };
 		26383A0F1F5C3BFD68ADBDE7 /* Torrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Torrent.swift; sourceTree = "<group>"; };
+		2AE2B44256AE45B5837AF46A /* MovieDetailHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailHero.swift; sourceTree = "<group>"; };
 		2B01A31A54EB99825A84829C /* GenreCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenreCard.swift; sourceTree = "<group>"; };
 		2BFF2DFA545B77756DD23447 /* MirrorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorApp.swift; sourceTree = "<group>"; };
 		2C53F12E6D677754042025B4 /* SettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailView.swift; sourceTree = "<group>"; };
@@ -503,6 +505,7 @@
 		AC5704BA6576F1ABF61598C1 /* MovieDetail */ = {
 			isa = PBXGroup;
 			children = (
+				2AE2B44256AE45B5837AF46A /* MovieDetailHero.swift */,
 				6C5A47F0B3BC5676B03BE259 /* MovieDetailView.swift */,
 				7765AB8E75A7885D4BE6A8CD /* MovieDetailViewModel.swift */,
 				9564C020501BD669D49BF3CB /* PeopleMetadataService.swift */,
@@ -768,6 +771,7 @@
 				D41FFC0F496640794C5B19FF /* MirrorVideoPlayerView.swift in Sources */,
 				B73B65D36E7F6033A413C955 /* Movie.swift in Sources */,
 				A0720188A2BB17F392DE5641 /* MovieDetail.swift in Sources */,
+				C325F30A533B64A001B11BF3 /* MovieDetailHero.swift in Sources */,
 				1B172A1923E6539BC4A58596 /* MovieDetailView.swift in Sources */,
 				70B6635075B7A695CDBAF170 /* MovieDetailViewModel.swift in Sources */,
 				054D5D0FB2D518FC954DCD9C /* MoviePosterCard.swift in Sources */,
