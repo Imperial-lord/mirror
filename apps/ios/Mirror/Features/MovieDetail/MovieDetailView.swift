@@ -2,8 +2,6 @@ import SwiftUI
 import NukeUI
 
 public struct MovieDetailView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var scheme
     @State private var viewModel: MovieDetailViewModel
     @State private var playbackRequestedAt = ContinuousClock.now
     @State private var trailer: MovieTrailer?
@@ -129,79 +127,13 @@ public struct MovieDetailView: View {
     @ViewBuilder
     private func heroSection(movie: MovieDetail) -> some View {
         VStack(spacing: 16) {
-            ZStack(alignment: .top) {
-                // Background Poster / Backdrop
-                ZStack(alignment: .bottom) {
-                    if let poster = movie.posterURL ?? movie.backdropURL {
-                        LazyImage(url: poster) { state in
-                            if let image = state.image {
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } else {
-                                Color(mirrorHex: "1C1C1C")
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 420)
-                        .clipped()
-                    } else {
-                        Color(mirrorHex: "1C1C1C")
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 420)
-                    }
-
-                    // Dark Gradient Fade into Background
-                    LinearGradient(
-                        colors: [
-                            Color.clear,
-                            Color(mirrorHex: "060606").opacity(0.3),
-                            Color(mirrorHex: "060606").opacity(0.8),
-                            Color(mirrorHex: "060606")
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 200)
-                }
-
-                LinearGradient(colors: [Color(mirrorHex: "000000").opacity(scheme == .dark ? 0.55 : 0.86), .clear],
-                               startPoint: .top, endPoint: .bottom)
-                    .frame(height: 150)
-                    .allowsHitTesting(false)
-
-                // Top Navigation Bar: Back Button & Rating Badges
-                HStack {
-                    Button(action: { dismiss() }) {
-                        PhosphorView(.caretLeft, size: 18)
-                            .foregroundStyle(Color.mirrorInk)
-                            .frame(width: 40, height: 40)
-                            .background(Color(mirrorHex: "121215").opacity(0.65))
-                            .clipShape(Circle())
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 8) {
-                        // IMDb Rating Pill (Translucent)
-                        HStack(spacing: 3) {
-                            Text("IMDb")
-                                .font(.system(size: 11, weight: .heavy))
-                                .foregroundColor(Color.mirrorInk)
-                            Text(String(format: "%.1f", movie.rating))
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(Color.mirrorInk)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color(mirrorHex: "121215").opacity(0.75))
-                        .overlay(Capsule().stroke(Color.mirrorInk.opacity(0.15), lineWidth: 1))
-                        .clipShape(Capsule())
-                    }
-                }
-                .padding(.horizontal, Spacing.md)
-                .padding(.top, 62)
-            }
+            MovieDetailHero(
+                movie: movie,
+                isObscured: viewModel.isShowingPlayer || trailer != nil
+                    || viewModel.isShowingDownloadSheet || viewModel.isShowingAddToLibrarySheet
+                    || viewModel.isShowingRateSheet
+            )
+            .id(movie.id)
 
             // Movie Title & Metadata
             VStack(spacing: 8) {

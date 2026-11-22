@@ -1,5 +1,4 @@
 import AVFoundation
-import FirebaseAuth
 import SwiftUI
 
 struct DesktopPreviewSelection {
@@ -414,27 +413,4 @@ private struct DesktopClipView: NSViewRepresentable {
 struct DesktopHomePreviewRequest: Equatable {
   let accountID: String?
   let movieIDs: [Int]
-
-  static func refresh(_ ids: [Int]) async throws -> [Int: URL] {
-    let configured = UserDefaults.standard.string(forKey: "PlaybackServiceURL")
-      ?? Bundle.main.object(forInfoDictionaryKey: "PlaybackServiceURL") as? String
-    guard let configured, let base = URL(string: configured),
-      base.scheme == "https", let user = Auth.auth().currentUser
-    else { return [:] }
-    var request = URLRequest(url: base.appendingPathComponent("v1/home-previews"))
-    request.httpMethod = "POST"
-    request.timeoutInterval = 8
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue("Bearer \(try await user.getIDToken())", forHTTPHeaderField: "Authorization")
-    request.httpBody = try JSONEncoder().encode(Array(ids.prefix(320)))
-    let (data, response) = try await URLSession.shared.data(for: request)
-    guard (response as? HTTPURLResponse)?.statusCode == 200, data.count < 512 * 1024
-    else { throw URLError(.badServerResponse) }
-    let clips = try JSONDecoder().decode([Int: URL].self, from: data)
-    let wanted = Set(ids)
-    return clips.filter { id, url in
-      guard let host = url.host, url.scheme == "https", wanted.contains(id) else { return false }
-      return host.hasPrefix("objectstorage.") && host.hasSuffix(".oraclecloud.com")
-    }
-  }
 }

@@ -144,13 +144,16 @@ older installed app versions. Filmography lists only Wikimedia-linked titles
 available in the movie catalog. Missing biography fields and unavailable
 filmographies are omitted. Pull to refresh retries person metadata.
 
-### macOS Home previews
+### Movie previews
 
 The worker fetches Popular Now, Top Rated, and all 18 genre rows directly from
 the catalog, using the same 15-title requests as Mac Home. It also includes
 each account's latest authenticated Home report, which supplies Selected For
 You and Continue Watching. The server returns ready clips only for IDs in the
-app's request. A title without a ready clip keeps its artwork.
+app's request. iOS movie details use the authenticated
+`GET /v1/home-previews?movie_id=<id>` lookup, which reads the same ready clips
+and leaves Home reports intact. A title without a ready clip keeps its artwork.
+Deploy the updated preview API before releasing the iOS client.
 
 The worker stores MP4s under prefixes such as `home/v1/popular-now/`,
 `home/v1/top-rated/`, and `home/v1/genres/action/`. Movies reported by an
