@@ -1,7 +1,7 @@
 import {mkdirSync, readFileSync, renameSync, writeFileSync} from 'node:fs'
 import {join} from 'node:path'
 
-export const maxPerAccount = 320
+export const maxPerAccount = 325
 const maxAccounts = 50
 
 export function movieIDs(value) {
@@ -39,13 +39,22 @@ export function createState(directory) {
       requests[account] = {ids, updatedAt: now}
       write('requests.json', requests)
     },
+    catalog: () => read('catalog.json', null),
+    recordCatalog: rows => write('catalog.json', rows),
+    rows() {
+      const reports = Object.entries(read('requests.json', {}))
+        .map(([account, request]) => [account, {'reported-home': request.ids}])
+      return Object.fromEntries([['catalog', read('catalog.json', {})], ...reports])
+    },
     wanted() {
-      const requests = Object.values(read('requests.json', {}))
+      const reported = Object.values(read('requests.json', {})).map(request => request.ids)
+      const catalog = Object.values(read('catalog.json', {}))
+      const rows = [...reported, ...catalog]
       const ids = new Set()
-      for (let index = 0; index < maxPerAccount; index++) {
-        for (const request of requests) {
-          const id = request.ids[index]
-          if (id !== undefined) ids.add(id)
+      const longest = Math.max(0, ...rows.map(row => row.length))
+      for (let index = 0; index < longest; index++) {
+        for (const row of rows) {
+          if (row[index] !== undefined) ids.add(row[index])
         }
       }
       return ids

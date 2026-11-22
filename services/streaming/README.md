@@ -146,12 +146,18 @@ filmographies are omitted. Pull to refresh retries person metadata.
 
 ### macOS Home previews
 
-The Mac app sends the movie IDs from its Home card rows to `POST /v1/home-previews`
-using its Firebase ID token. The preview service keeps the latest snapshot for
-each account even while the app is closed, and returns ready clips only for IDs
-in the request. The app plays the
-muted MP4 directly from the private OCI bucket. A title without a ready clip keeps
-its regular artwork.
+The worker fetches Popular Now, Top Rated, and all 18 genre rows directly from
+the catalog, using the same 15-title requests as Mac Home. It also includes
+each account's latest authenticated Home report, which supplies Selected For
+You and Continue Watching. The server returns ready clips only for IDs in the
+app's request. A title without a ready clip keeps its artwork.
+
+A title listed in multiple rows uses one MP4 at `home/v1/<movie-id>.mp4`.
+Private indexes at `home/rows/v1/catalog.json` and
+`home/rows/v1/<account-hash>.json` map the catalog rows and account reports to
+those object names, including pending clips. The clip read URL only covers
+`home/v1/`. If the catalog service fails, the worker keeps the last complete
+catalog snapshot.
 
 Run `previews/api.mjs` on one worker with a persistent, private `/state` directory.
 Build its image with `previews/Dockerfile` and an existing streaming service image

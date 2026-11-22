@@ -1,9 +1,10 @@
-import {mkdtemp, rm} from 'node:fs/promises'
+import {mkdtemp, rm, writeFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {createState, pendingClips} from './state.mjs'
 import {movieHash, makeTorrentClip, runFile} from './clip.mjs'
+import {fetchHomeCatalog} from './home-catalog.mjs'
 
 const state = createState(process.env.PREVIEW_STATE_DIR ?? '/state')
 const helper = fileURLToPath(new URL('./oci-store.py', import.meta.url))
@@ -15,6 +16,28 @@ async function objects(action, ...args) {
     timeout: 60_000,
   })
   return stdout
+}
+
+async function syncIndexes() {
+  const directory = await mkdtemp(join(tmpdir(), 'mirror-preview-indexes-'))
+  try {
+    const path = join(directory, 'rows.json')
+    await writeFile(path, JSON.stringify(state.rows()), {mode: 0o600})
+    await objects('sync-indexes', path)
+  } finally {
+    await rm(directory, {recursive: true, force: true})
+  }
+}
+
+async function updateCatalog() {
+  try {
+    const rows = await fetchHomeCatalog()
+    state.recordCatalog(rows)
+    console.log(`Loaded ${Object.keys(rows).length} Home catalog rows with ${Object.values(rows).flat().length} slots`)
+  } catch (error) {
+    if (!state.catalog()) throw error
+    console.warn(`Using the last complete Home catalog: ${error.message}`)
+  }
 }
 
 async function refresh() {
@@ -33,6 +56,8 @@ async function refresh() {
 
   const candidates = pendingClips(wanted, stored, failures)
   console.log(`Preview refresh started with ${candidates.length} missing of ${wanted.size} Home titles`)
+  try { await syncIndexes() }
+  catch (error) { console.warn('Preview row indexes could not be synchronized:', error.code ?? error.name) }
   const scratch = await mkdtemp(join(tmpdir(), 'mirror-preview-'))
   try {
     for (const id of candidates) {
@@ -69,4 +94,6 @@ async function refresh() {
   console.log(`Preview refresh finished with ${stored.size} stored clips`)
 }
 
-await refresh()
+await updateCatalog()
+if (process.argv.includes('--indexes-only')) await syncIndexes()
+else await refresh()
