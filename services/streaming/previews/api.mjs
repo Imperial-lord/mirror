@@ -3,11 +3,13 @@ import {createServer} from 'node:http'
 import {applicationDefault, initializeApp} from 'firebase-admin/app'
 import {getAuth} from 'firebase-admin/auth'
 import {createState, movieIDs} from './state.mjs'
+import {diagnostics, observeRequest} from '../diagnostics.mjs'
 
 const projectId = process.env.FIREBASE_PROJECT_ID
 if (!projectId) throw new Error('FIREBASE_PROJECT_ID is required')
 initializeApp({credential: applicationDefault(), projectId})
 const state = createState(process.env.PREVIEW_STATE_DIR ?? '/state')
+const log = diagnostics('preview_api')
 const origin = new URL(process.env.PREVIEW_READ_URL)
 if (origin.protocol !== 'https:' ||
     !/^objectstorage\.[a-z0-9-]+\.oraclecloud\.com$/.test(origin.hostname) ||
@@ -21,10 +23,14 @@ function json(res, status, value) {
 }
 
 createServer(async (req, res) => {
+  const context = observeRequest(req, res, log, {
+    trustRequestID: process.env.MIRROR_TRUST_EDGE_REQUEST_ID === 'true'
+  })
   const [path, query] = req.url.split('?', 2)
   if (path !== '/v1/home-previews' || !['GET', 'POST'].includes(req.method)) {
     return json(res, 404, {})
   }
+  context.route = 'home_previews'
   let uid
   try {
     const match = /^Bearer (.+)$/.exec(req.headers.authorization ?? '')
@@ -57,8 +63,13 @@ createServer(async (req, res) => {
       Object.fromEntries(state.clips().map(id => [id, `${id}.mp4`]))
     const entries = ids.filter(id => locations[id])
       .map(id => [id, new URL(locations[id], origin).href])
+    context.outcome = entries.length === 0 ? 'preview_miss'
+      : entries.length === ids.length ? 'preview_hit' : 'preview_partial'
+    context.requested_clips = ids.length
+    context.available_clips = entries.length
     return json(res, 200, Object.fromEntries(entries))
   } catch {
+    context.outcome = 'preview_lookup_failed'
     return json(res, 503, {})
   }
 }).listen(Number(process.env.PREVIEW_PORT ?? 8790), process.env.PREVIEW_HOST ?? '127.0.0.1')

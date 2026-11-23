@@ -1,7 +1,7 @@
 import SwiftUI
 import AVKit
 import SwiftData
-import OSLog
+import UIKit
 
 public struct MirrorVideoPlayerView: View {
     @Environment(\.dismiss) private var dismiss
@@ -35,7 +35,8 @@ public struct MirrorVideoPlayerView: View {
     #if DEBUG
     @State private var seekFrameProbe: Task<Void, Never>?
     #endif
-    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.mirror.app", category: "Playback")
+    @State private var diagnostics = PlaybackDiagnostics()
+    @State private var copiedDiagnostics = false
     private var timelinePosition: Double { scrubPreview ?? seekTarget ?? currentTime }
     private var showsLoadingOverlay: Bool { isPreparing || !hasReadyFrame }
 
@@ -229,6 +230,7 @@ public struct MirrorVideoPlayerView: View {
         .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification).receive(on: DispatchQueue.main)) { note in
             guard let raw = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
                   AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+            diagnostics.record(.audioChanged)
             resumeAfterInterruption = false
             resumeInForeground = false
             isPlaying = false
@@ -247,7 +249,7 @@ public struct MirrorVideoPlayerView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: AVPlayerItem.failedToPlayToEndTimeNotification).receive(on: DispatchQueue.main)) { note in
             guard let item = note.object as? AVPlayerItem, item === player?.currentItem else { return }
-            recoverPlayback(message: "Playback was interrupted.")
+            recoverPlayback(message: "Playback was interrupted.", reason: .interrupted)
         }
         .alert("Picture in Picture couldn’t start", isPresented: Binding(
             get: { videoSurface.pictureInPictureError },
@@ -284,6 +286,7 @@ public struct MirrorVideoPlayerView: View {
             saveProgress(flush: true)
             controlsTimer?.invalidate()
             tearDownPlayer()
+            diagnostics.record(.closed)
             playbackService.close()
         }
     }
@@ -298,10 +301,20 @@ public struct MirrorVideoPlayerView: View {
                         .font(.system(size: 18, weight: .medium)).foregroundStyle(Color.mirrorInk)
                     Text(errorMessage ?? "Please try again in a moment or choose another quality.")
                         .font(.system(size: 14)).foregroundStyle(Color.mirrorTextSecondary)
-                    Button("Try again") { restartPlayback() }
+                    Button("Try again") {
+                        diagnostics.record(.manualRetry)
+                        restartPlayback(measureRecovery: true)
+                    }
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.mirrorOnInk).padding(.horizontal, 24).padding(.vertical, 12)
                         .background(Color.mirrorInk, in: Capsule())
+                    Button(copiedDiagnostics ? "Diagnostics copied" : "Copy Playback Diagnostics") {
+                        UIPasteboard.general.setItems(
+                            [["public.utf8-plain-text": diagnostics.report]], options: [.localOnly: true]
+                        )
+                        copiedDiagnostics = true
+                    }
+                    .font(.system(size: 14)).foregroundStyle(Color.mirrorInk)
                 } else {
                     ProgressView()
                         .tint(Color.mirrorInk)
@@ -547,6 +560,8 @@ public struct MirrorVideoPlayerView: View {
 
     private func startPlayback() {
         errorMessage = nil
+        copiedDiagnostics = false
+        diagnostics.begin(offline: offline != nil)
         isPreparing = true
         isBuffering = isPlaying
         if startupStarted == nil { startupStarted = .now }
@@ -554,6 +569,7 @@ public struct MirrorVideoPlayerView: View {
         playbackTask = Task { @MainActor in
             if let offline {
                 guard FileManager.default.fileExists(atPath: offline.file.path) else {
+                    diagnostics.record(.openFailed, reason: .offlineFileMissing)
                     errorMessage = "This downloaded file is missing. Download the movie again."
                     return
                 }
@@ -562,17 +578,26 @@ public struct MirrorVideoPlayerView: View {
             }
             let candidates = (movie.torrents ?? []).filter { MovieQuality.label($0.quality) == selectedQuality }
             guard let torrent = candidates.max(by: { $0.seeds < $1.seeds }) else {
+                diagnostics.record(.openFailed, reason: .unsupportedSource)
                 errorMessage = "Unavailable quality"
                 return
             }
+            let opening = ContinuousClock.now
             do {
-                let opening = ContinuousClock.now
                 let url = try await playbackService.open(hash: torrent.hash)
                 try Task.checkCancellation()
-                recordTiming("stream_session", since: opening)
+                diagnostics.associate(playbackService.diagnosticReference)
+                recordTiming(.streamSession, since: opening)
                 setupPlayer(with: url)
             } catch is CancellationError { } catch {
                 if !Task.isCancelled {
+                    diagnostics.associate(playbackService.diagnosticReference)
+                    let reason = PlaybackDiagnostics.Reason(openError: error)
+                    diagnostics.record(.openFailed, since: opening, reason: reason)
+                    if let started = recoveryStarted {
+                        diagnostics.record(.recoveryFailed, since: started, reason: reason)
+                        recoveryStarted = nil
+                    }
                     errorMessage = (error as? PlaybackService.Failure)?.errorDescription
                         ?? "Please try again in a moment or choose another quality."
                 }
@@ -580,9 +605,9 @@ public struct MirrorVideoPlayerView: View {
         }
     }
 
-    private func restartPlayback() {
+    private func restartPlayback(measureRecovery: Bool = false) {
         recoveryUsed = false
-        recoveryStarted = nil
+        recoveryStarted = measureRecovery ? .now : nil
         startupStarted = .now
         reopenPlayback()
     }
@@ -636,7 +661,7 @@ public struct MirrorVideoPlayerView: View {
                         updateBuffering()
                     }
                 case .failed:
-                    recoverPlayback(message: "The video couldn’t be opened.")
+                    recoverPlayback(message: "The video couldn’t be opened.", reason: .itemFailed)
                 default: break
                 }
             }
@@ -720,6 +745,8 @@ public struct MirrorVideoPlayerView: View {
     }
 
     private func performSeek(to seconds: Double, player: AVPlayer, preparing: Bool) {
+        let started = ContinuousClock.now
+        diagnostics.record(preparing ? .resumeStarted : .seekStarted)
         let id = UUID()
         seekID = id
         seekTarget = seconds
@@ -737,11 +764,15 @@ public struct MirrorVideoPlayerView: View {
                 guard self.player === player, seekID == id else { return }
                 seekTarget = nil
                 guard finished else {
-                    recoverPlayback(message: "Couldn’t seek to that position.")
+                    diagnostics.record(.seekFailed, since: started, reason: .seekFailed)
+                    recoverPlayback(message: "Couldn’t seek to that position.", reason: .seekFailed)
                     return
                 }
                 if player.currentTime().seconds.isFinite { acceptPosition(player.currentTime().seconds) }
-                if preparing { isPreparing = false }
+                if preparing {
+                    diagnostics.record(.resumeCompleted, since: started)
+                    isPreparing = false
+                }
                 if !preparing, currentTime >= totalDuration {
                     finishPlayback()
                     return
@@ -755,6 +786,7 @@ public struct MirrorVideoPlayerView: View {
 
     private func finishPlayback() {
         guard !hasEnded else { return }
+        diagnostics.record(.ended)
         hasEnded = true
         isPlaying = false
         isPreparing = false
@@ -790,12 +822,12 @@ public struct MirrorVideoPlayerView: View {
         let waiting = !hasEnded && (isPreparing || seekTarget != nil || (isPlaying && player?.timeControlStatus != .playing))
         isBuffering = waiting
         if let started = seekStarted, seekTarget == nil, !isPreparing, !waiting {
-            recordTiming(isPlaying ? "seek_to_playing" : "seek_completed_paused", since: started)
+            recordTiming(isPlaying ? .seekPlaying : .seekPaused, since: started)
             seekStarted = nil
         }
         if !waiting {
             if let started = recoveryStarted, player?.timeControlStatus == .playing {
-                recordTiming("recovery_to_playing", since: started)
+                recordTiming(.recoveryPlaying, since: started)
                 recoveryStarted = nil
             }
             endStall()
@@ -803,7 +835,10 @@ public struct MirrorVideoPlayerView: View {
             recoveryTask = nil
             return
         }
-        if startupStarted == nil, seekStarted == nil, stallStarted == nil { stallStarted = .now }
+        if startupStarted == nil, seekStarted == nil, stallStarted == nil {
+            stallStarted = .now
+            diagnostics.record(.bufferingStarted)
+        }
         guard offline == nil, let player else { return }
         guard scenePhase != .background || videoSurface.isInPictureInPicture || player.isExternalPlaybackActive else {
             recoveryTask?.cancel()
@@ -815,17 +850,18 @@ public struct MirrorVideoPlayerView: View {
             do { try await Task.sleep(for: .seconds(isPreparing ? 30 : 15)) }
             catch { return }
             guard self.player === player, isBuffering else { return }
-            recoverPlayback(message: "The stream stopped responding.")
+            recoverPlayback(message: "The stream stopped responding.", reason: .stalled)
         }
     }
 
-    private func recoverPlayback(message: String) {
+    private func recoverPlayback(message: String, reason: PlaybackDiagnostics.Reason) {
         if offline == nil, !recoveryUsed {
             recoveryUsed = true
             recoveryStarted = .now
-            Self.log.info("Retrying stream from last confirmed position")
+            diagnostics.record(.retryScheduled, reason: reason)
             reopenPlayback()
         } else {
+            diagnostics.record(.recoveryFailed, since: recoveryStarted, reason: reason)
             tearDownPlayer()
             playbackService.close()
             isBuffering = false
@@ -855,7 +891,7 @@ public struct MirrorVideoPlayerView: View {
         guard self.player === player else { return }
         hasReadyFrame = true
         guard let started = startupStarted else { return }
-        recordTiming("first_frame", since: started)
+        recordTiming(.firstFrame, since: started)
         startupStarted = nil
     }
 
@@ -873,7 +909,7 @@ public struct MirrorVideoPlayerView: View {
             let deadline = start.advanced(by: .seconds(35))
             while !Task.isCancelled, self.player === player, self.seekID == seekID, ContinuousClock.now < deadline {
                 if seekTarget == nil, output.hasNewPixelBuffer(forItemTime: player.currentTime()) {
-                    recordTiming("seek_frame_ready", since: start)
+                    recordTiming(.seekFrame, since: start)
                     return
                 }
                 do { try await Task.sleep(for: .milliseconds(16)) }
@@ -884,15 +920,13 @@ public struct MirrorVideoPlayerView: View {
     #endif
 
     private func endStall() {
-        if let started = stallStarted { recordTiming("stall", since: started) }
+        if let started = stallStarted { recordTiming(.stall, since: started) }
         stallStarted = nil
     }
 
-    private func recordTiming(_ event: String, since start: ContinuousClock.Instant) {
-        let elapsed = start.duration(to: .now).components
-        let milliseconds = elapsed.seconds * 1_000 + elapsed.attoseconds / 1_000_000_000_000_000
+    private func recordTiming(_ event: PlaybackDiagnostics.Event, since start: ContinuousClock.Instant) {
         let downloading = DownloadStore.shared.records.contains { $0.status == .downloading || $0.status == .preparing }
-        Self.log.info("\(event, privacy: .public) ms=\(milliseconds) offline=\(offline != nil) download_active=\(downloading) quality=\(selectedQuality, privacy: .public)")
+        diagnostics.record(event, since: start, downloadActive: downloading)
     }
 
     private func toggleControls() {

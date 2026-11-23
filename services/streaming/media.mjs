@@ -1,6 +1,10 @@
+import {performance} from 'node:perf_hooks'
+import {elapsed} from './diagnostics.mjs'
+
 // Release request slots on socket close, even when an upstream iterator never settles.
-export async function serveVideo(req, res, session, range, window = 4 * 1024 * 1024) {
+export async function serveVideo(req, res, session, range, window = 4 * 1024 * 1024, context = {}) {
   if (req.method !== 'HEAD' && session.active >= 4) {
+    context.outcome = 'media_capacity'
     res.writeHead(503, {'Content-Type':'application/json'})
     return res.end(JSON.stringify({error:'Playback capacity reached'}))
   }
@@ -9,6 +13,10 @@ export async function serveVideo(req, res, session, range, window = 4 * 1024 * 1
   if (range) headers['Content-Range'] = `bytes ${start}-${end}/${session.file.length}`
   res.writeHead(range ? 206 : 200, headers)
   if (req.method === 'HEAD') return res.end()
+  const started = performance.now()
+  context.bytes_written = 0
+  context.partial_request = Boolean(range)
+  if (session.reads !== undefined) session.reads++
   session.active++
   let stream, released = false
   const release = () => {
@@ -20,12 +28,24 @@ export async function serveVideo(req, res, session, range, window = 4 * 1024 * 1
     res.off('close', release)
   }
   res.on('close', release)
-  res.setTimeout(60_000, () => res.destroy())
+  res.setTimeout(60_000, () => {
+    context.outcome = 'media_timeout'
+    res.destroy()
+  })
   try {
     for (let offset = start; offset <= end && !res.destroyed; offset += window) {
       stream = session.file.createReadStream({start:offset, end:Math.min(end, offset+window-1)})
       for await (const chunk of stream) {
         if (res.destroyed) break
+        if (context.first_byte_ms === undefined) {
+          context.first_byte_ms = elapsed(started)
+          if (session.started !== undefined && session.firstByteMs === undefined) {
+            session.firstByteMs = elapsed(session.started)
+            context.session_first_byte_ms = session.firstByteMs
+          }
+        }
+        context.bytes_written += chunk.length
+        if (session.bytesWritten !== undefined) session.bytesWritten += chunk.length
         if (!res.write(chunk)) await new Promise(resolve => {
           const done = () => { res.off('drain', done); res.off('close', done); resolve() }
           res.once('drain', done); res.once('close', done)
@@ -34,8 +54,8 @@ export async function serveVideo(req, res, session, range, window = 4 * 1024 * 1
       session.touched = Date.now()
     }
     res.end()
-  } catch (error) {
-    if (!res.destroyed) console.warn('Media read failed:', error.code ?? error.message)
+  } catch {
+    if (!res.destroyed) context.outcome = 'media_failure'
     res.destroy()
   } finally { release() }
 }

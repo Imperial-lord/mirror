@@ -28,6 +28,7 @@ export function clusterRouting(env = process.env) {
         for (const name of ['authorization', 'content-type', 'range']) {
           if (req.headers[name] !== undefined) headers[name] = req.headers[name]
         }
+        headers['x-request-id'] = res.getHeader('x-request-id') ?? randomUUID().replaceAll('-', '')
         if (body !== undefined) headers['content-length'] = Buffer.byteLength(body)
         const request = http.request(new URL(path, peer), {method: req.method, headers}, resolve)
         const disconnect = () => { if (!res.writableEnded) request.destroy() }
@@ -42,7 +43,7 @@ export function clusterRouting(env = process.env) {
         return false
       }
       const headers = {...upstream.headers}
-      for (const name of ['connection', 'keep-alive', 'transfer-encoding', 'x-mirror-capacity']) delete headers[name]
+      for (const name of ['connection', 'keep-alive', 'transfer-encoding', 'x-mirror-capacity', 'x-request-id']) delete headers[name]
       res.writeHead(upstream.statusCode, headers)
       await pipeline(upstream, res)
       return true

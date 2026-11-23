@@ -28,6 +28,9 @@ import XCTest
     XCTAssertFalse(controller.showsLoadingIndicator)
     XCTAssertEqual(controller.position, 123)
     XCTAssertFalse(controller.wantsPlay)
+    XCTAssertTrue(controller.diagnosticsReport.contains("retry_scheduled source=stream"))
+    XCTAssertTrue(controller.diagnosticsReport.contains("recovery_failed source=stream"))
+    XCTAssertFalse(controller.diagnosticsReport.contains("Fixture"))
     controller.retryPlayback()
     for _ in 0..<10 {
       if source.attempts > 3 { break }
@@ -40,5 +43,36 @@ import XCTest
     controller.stop()
     try await Task.sleep(for: .seconds(3))
     XCTAssertEqual(source.attempts, 4, "Closing playback cancels queued reconnects")
+  }
+
+  func testDiagnosticsKeepsValidatedReferencesAndBoundsTheReport() throws {
+    let legacy = try JSONDecoder().decode(PlaybackSession.self, from: Data("""
+    {"id":"fixture-session","path":"/fixture"}
+    """.utf8))
+    XCTAssertNil(legacy.diagnosticID)
+    let playbackID = try XCTUnwrap(UUID(uuidString: "f16fb802-6128-41a7-b725-e0fbeddac112"))
+    let requestID = "abcdef0123456789abcdef0123456789"
+    let session = try JSONDecoder().decode(PlaybackSession.self, from: Data("""
+    {"id":"fixture-session","path":"/fixture","diagnostic_id":"\(playbackID.uuidString)"}
+    """.utf8))
+    XCTAssertEqual(session.diagnosticID.flatMap(UUID.init(uuidString:)), playbackID)
+
+    let diagnostics = PlaybackDiagnostics()
+    diagnostics.begin(offline: true)
+    XCTAssertTrue(diagnostics.report.contains("opening source=offline"))
+    diagnostics.begin(offline: false)
+    diagnostics.associate(PlaybackDiagnosticReference(requestID: "https://private.example", status: 503))
+    diagnostics.record(.openFailed, reason: .busy)
+    XCTAssertFalse(diagnostics.report.contains("private.example"))
+    XCTAssertTrue(diagnostics.report.contains("reason=busy http_status=503"))
+
+    diagnostics.begin(offline: false)
+    diagnostics.associate(PlaybackDiagnosticReference(requestID: requestID, playbackID: playbackID, status: 201))
+    for _ in 0..<30 { diagnostics.record(.firstFrame, since: .now) }
+    let report = diagnostics.report
+    XCTAssertEqual(report.split(separator: "\n").count, 26)
+    XCTAssertTrue(report.contains("request_id=\(requestID)"))
+    XCTAssertTrue(report.contains("playback_id=\(playbackID.uuidString.lowercased())"))
+    XCTAssertFalse(report.contains("503"))
   }
 }
