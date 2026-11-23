@@ -1,11 +1,18 @@
 import AVFoundation
 import AppKit
 import IOKit.pwr_mgt
+import SwiftData
 import SwiftUI
 
 @MainActor @Observable final class DesktopPlayerController {
   let player = AVPlayer()
   private let mediaControls = SystemMediaControls()
+  private let diagnostics = PlaybackDiagnostics()
+  private var startupStarted: ContinuousClock.Instant?
+  private var bufferingStarted: ContinuousClock.Instant?
+  private var recoveryStarted: ContinuousClock.Instant?
+  private var reportedEnd = false
+  var diagnosticsReport: String { diagnostics.report }
   var loading = true
   var buffering = false
   var playing = false
@@ -97,6 +104,7 @@ import SwiftUI
           self.playing = self.player.timeControlStatus == .playing
           self.buffering =
             self.wantsPlay && self.player.timeControlStatus == .waitingToPlayAtSpecifiedRate
+          self.updateDiagnostics()
           self.updateSleep()
         }
       }
@@ -124,6 +132,11 @@ import SwiftUI
     recoveryTask = nil
     prepareTask?.cancel()
     source.close()
+    finishBuffering()
+    diagnostics.begin(offline: offline)
+    let started = ContinuousClock.now
+    startupStarted = started
+    reportedEnd = false
     player.pause()
     ready = false
     hasReadyFrame = false
@@ -147,13 +160,17 @@ import SwiftUI
           url = try await source.open(hash: torrent.hash)
         }
         guard generation == token, !Task.isCancelled else { return }
+        if !offline {
+          diagnostics.associate((source as? PlaybackService)?.diagnosticReference)
+          diagnostics.record(.streamSession, since: started)
+        }
         let item = AVPlayerItem(url: url)
         item.preferredForwardBufferDuration = 8
         itemObservation = item.observe(\.status, options: [.new, .initial]) { [weak self] item, _ in
           Task { @MainActor in
             guard let self, self.generation == token else { return }
             if item.status == .failed {
-              self.recoverPlayback()
+              self.recoverPlayback(reason: .itemFailed)
             } else if item.status == .readyToPlay {
               self.ready = true
               self.loading = false
@@ -166,10 +183,17 @@ import SwiftUI
                 let target = min(self.seekTarget, max(0, self.duration - 1))
                 self.seekTarget = 0
                 self.seeking = true
-                await self.player.seek(
+                let resumeStarted = ContinuousClock.now
+                let resumesPosition = target > 0
+                if resumesPosition { self.diagnostics.record(.resumeStarted) }
+                let finished = await self.player.seek(
                   to: CMTime(seconds: target, preferredTimescale: 600),
                   toleranceBefore: CMTime(seconds: 0.3, preferredTimescale: 600),
                   toleranceAfter: CMTime(seconds: 0.3, preferredTimescale: 600))
+                if resumesPosition, self.generation == token, self.seekGeneration == initialSeekToken {
+                  self.diagnostics.record(finished ? .resumeCompleted : .seekFailed, since: resumeStarted,
+                    reason: finished ? nil : .seekFailed)
+                }
               }
               guard self.generation == token, self.seekGeneration == initialSeekToken else {
                 return
@@ -186,24 +210,35 @@ import SwiftUI
           setSubtitle(subtitleChoices.contains("en") ? "en" : subtitleChoices[0])
         }
       } catch is CancellationError {} catch {
-        guard generation == token else { return }
-        recoverPlayback()
+        guard generation == token, !Task.isCancelled else { return }
+        diagnostics.associate((source as? PlaybackService)?.diagnosticReference)
+        let reason = PlaybackDiagnostics.Reason(openError: error)
+        diagnostics.record(.openFailed, since: started, reason: reason)
+        recoverPlayback(reason: reason)
       }
     }
   }
   func retryPlayback() {
+    diagnostics.record(.manualRetry)
+    reopenAfterResettingRetries()
+  }
+  private func reopenAfterResettingRetries() {
     recoveryAttempts = 0
+    recoveryStarted = .now
     recoveryTask?.cancel()
     recoveryTask = nil
     open(resume: position)
   }
   func pauseForAudioChange() {
+    diagnostics.record(.audioChanged)
     wantsPlay = false
     player.pause()
     save()
     updateSleep()
   }
   func suspendForSleep() {
+    finishBuffering()
+    diagnostics.record(.sleep)
     sleeping = true
     save()
     generation = UUID()
@@ -216,12 +251,16 @@ import SwiftUI
     guard sleeping else { return }
     sleeping = false
     guard request != nil else { return }
-    retryPlayback()
+    diagnostics.record(.wake)
+    reopenAfterResettingRetries()
   }
-  func recoverPlayback() {
+  func recoverPlayback(reason: PlaybackDiagnostics.Reason = .stalled) {
     guard request != nil, !sleeping, recoveryTask == nil else { return }
     save()
     guard !offline, recoveryAttempts < 2 else {
+      finishBuffering()
+      diagnostics.record(.recoveryFailed, since: recoveryStarted, reason: reason)
+      recoveryStarted = nil
       loading = false
       buffering = false
       seeking = false
@@ -231,6 +270,8 @@ import SwiftUI
       return
     }
     recoveryAttempts += 1
+    if recoveryStarted == nil { recoveryStarted = .now }
+    diagnostics.record(.retryScheduled, reason: reason)
     loading = true
     player.pause()
     recoveryTask = Task { [weak self] in
@@ -256,6 +297,9 @@ import SwiftUI
   func seek(_ seconds: Double) {
     guard ready, seconds.isFinite else { return }
     seeking = true
+    reportedEnd = false
+    let started = ContinuousClock.now
+    diagnostics.record(.seekStarted)
     let seekToken = UUID()
     seekGeneration = seekToken
     let streamToken = generation
@@ -270,6 +314,8 @@ import SwiftUI
           return
         }
         self.seeking = false
+        self.diagnostics.record(finished ? .seekCompleted : .seekFailed,
+          since: started, reason: finished ? nil : .seekFailed)
         if finished {
           if self.wantsPlay { self.player.playImmediately(atRate: self.rate) }
           self.save()
@@ -346,12 +392,41 @@ import SwiftUI
     let captionTime = position - UserDefaults.standard.double(forKey: "subtitleTimingOffset")
     caption = cues.first(where: { $0.start <= captionTime && $0.end > captionTime })?.text ?? ""
     if duration > 0, position >= duration - 0.2 {
+      if !reportedEnd {
+        reportedEnd = true
+        diagnostics.record(.ended)
+      }
       wantsPlay = false
       player.pause()
       save()
       updateSleep()
     }
     if Date().timeIntervalSince(lastSave) > 15, position > 0, ready { save() }
+  }
+  func updateFrameReadiness(_ ready: Bool) {
+    hasReadyFrame = ready
+    if ready, let started = startupStarted {
+      startupStarted = nil
+      diagnostics.record(.firstFrame, since: started)
+    }
+  }
+  private func updateDiagnostics() {
+    if buffering, hasReadyFrame, !seeking, failure == nil, !sleeping {
+      if bufferingStarted == nil {
+        bufferingStarted = .now
+        diagnostics.record(.bufferingStarted)
+      }
+    } else {
+      finishBuffering()
+    }
+    if playing, ready, !seeking, let started = recoveryStarted {
+      recoveryStarted = nil
+      diagnostics.record(.recoveryPlaying, since: started)
+    }
+  }
+  private func finishBuffering() {
+    if let started = bufferingStarted { diagnostics.record(.stall, since: started) }
+    bufferingStarted = nil
   }
   func save() {
     guard ready, position > 0, duration > 0 else { return }
@@ -369,6 +444,10 @@ import SwiftUI
     }
   }
   func stop() {
+    finishBuffering()
+    diagnostics.record(.closed)
+    startupStarted = nil
+    recoveryStarted = nil
     audioRoute.stop()
     recoveryTask?.cancel()
     recoveryTask = nil
@@ -488,6 +567,7 @@ struct DesktopPlayerView: View {
   @Environment(\.modelContext) private var context
   @State private var model = DesktopPlayerController()
   @State private var controls = true
+  @State private var copiedDiagnostics = false
   @State private var settings = false
   @State private var hideTask: Task<Void, Never>?
   @State private var enteredFullscreen = false
@@ -512,7 +592,7 @@ struct DesktopPlayerView: View {
   private var playerContent: some View {
     ZStack {
       Color.black
-      DesktopVideoSurface(player: model.player, onReadyForDisplay: { model.hasReadyFrame = $0 })
+      DesktopVideoSurface(player: model.player, onReadyForDisplay: model.updateFrameReadiness)
         .onTapGesture {
           if model.playing && controls {
             hideTask?.cancel()
@@ -691,6 +771,7 @@ struct DesktopPlayerView: View {
             Text(failure).font(.callout).foregroundStyle(.white.opacity(0.6))
               .multilineTextAlignment(.center).frame(maxWidth: 500)
             Button {
+              copiedDiagnostics = false
               model.wantsPlay = true
               model.retryPlayback()
             } label: {
@@ -698,6 +779,11 @@ struct DesktopPlayerView: View {
                 .vertical, 13
               ).background(.white, in: Capsule())
             }.buttonStyle(.plain)
+            Button(copiedDiagnostics ? "Diagnostics copied" : "Copy Playback Diagnostics") {
+              NSPasteboard.general.clearContents()
+              copiedDiagnostics = NSPasteboard.general.setString(model.diagnosticsReport, forType: .string)
+            }
+            .buttonStyle(.plain)
           }
         } else if model.showsLoadingIndicator {
           Color.clear.frame(height: 80)

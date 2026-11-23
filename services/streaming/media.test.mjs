@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {EventEmitter} from 'node:events'
 import {Readable} from 'node:stream'
+import {performance} from 'node:perf_hooks'
 import {serveVideo} from './media.mjs'
 class Response extends EventEmitter {
   destroyed = false; data = []; status = null
@@ -28,14 +29,32 @@ test('cancelled stalled reads release slots immediately and only once', () => {
   assert.equal(destroyed,8)
 })
 test('valid ranges are served in bounded windows and slots are released', async () => {
-  const ranges = [], session = {active:0,file:{length:10,createReadStream:range=>{
+  const ranges = [], session = {active:0, started:performance.now(), reads:0, bytesWritten:0, file:{length:10,createReadStream:range=>{
     ranges.push(range); return Readable.from([Buffer.alloc(range.end-range.start+1)])
   }}}
   const res = new Response()
-  await serveVideo({method:'GET'},res,session,{start:2,end:8},3)
+  const context = {}
+  await serveVideo({method:'GET'},res,session,{start:2,end:8},3,context)
   assert.equal(res.status,206); assert.equal(res.headers['Content-Range'],'bytes 2-8/10')
   assert.equal(Buffer.concat(res.data).length,7); assert.equal(session.active,0)
   assert.deepEqual(ranges,[{start:2,end:4},{start:5,end:7},{start:8,end:8}])
+  assert.equal(context.bytes_written, 7)
+  assert.equal(session.bytesWritten, 7)
+  assert.equal(session.reads, 1)
+  assert.ok(context.first_byte_ms >= 0)
+  assert.equal(context.session_first_byte_ms, session.firstByteMs)
+})
+
+test('upstream read failure is recorded without including the exception text', async () => {
+  const session = {active:0,file:{length:10,createReadStream:() => Readable.from((async function * () {
+    throw new Error('https://private.example/secret')
+  })())}}
+  const res = new Response()
+  const context = {}
+  await serveVideo({method:'GET'}, res, session, null, undefined, context)
+  assert.equal(context.outcome, 'media_failure')
+  assert.equal(session.active, 0)
+  assert.doesNotMatch(JSON.stringify(context), /private|secret/)
 })
 test('capacity responds explicitly while HEAD does not consume a stream slot', async () => {
   const session = {active:4,file:{length:10,createReadStream:()=>{throw new Error('must not read')}}}

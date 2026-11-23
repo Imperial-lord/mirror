@@ -1,9 +1,110 @@
 import Foundation
 import FirebaseAuth
+import OSLog
 
 struct PlaybackSession: Decodable {
     let id: String
     let path: String
+    let diagnosticID: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, path
+        case diagnosticID = "diagnostic_id"
+    }
+}
+
+struct PlaybackDiagnosticReference {
+    let requestID: String?
+    var playbackID: UUID?
+    let status: Int?
+
+    init(requestID: String? = nil, playbackID: UUID? = nil, status: Int? = nil) {
+        self.requestID = requestID.flatMap { id in
+            id.utf8.count == 32 && id.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
+                ? id : nil
+        }
+        self.playbackID = playbackID
+        self.status = status
+    }
+}
+
+@MainActor
+final class PlaybackDiagnostics {
+    enum Event: String {
+        case opening, firstFrame = "first_frame", streamSession = "stream_session", openFailed = "open_failed"
+        case seekStarted = "seek_started", resumeStarted = "resume_started", resumeCompleted = "resume_completed"
+        case seekFailed = "seek_failed"
+        case seekCompleted = "seek_completed"
+        case seekPlaying = "seek_to_playing", seekPaused = "seek_completed_paused", seekFrame = "seek_frame_ready"
+        case bufferingStarted = "buffering_started", stall, retryScheduled = "retry_scheduled"
+        case manualRetry = "manual_retry", recoveryPlaying = "recovery_to_playing", recoveryFailed = "recovery_failed"
+        case audioChanged = "audio_device_changed", sleep, wake, ended, closed
+    }
+
+    enum Reason: String {
+        case offlineFileMissing = "offline_file_missing", unsupportedSource = "unsupported_source"
+        case sourceUnavailable = "source_unavailable", busy, serviceUnavailable = "service_unavailable"
+        case requestFailed = "request_failed", itemFailed = "item_failed", stalled
+        case seekFailed = "seek_failed", interrupted
+
+        init(openError: Error) {
+            switch openError as? PlaybackService.Failure {
+            case .busy: self = .busy
+            case .serviceUnavailable: self = .serviceUnavailable
+            case .sourceUnavailable: self = .sourceUnavailable
+            case .unsupportedVideo: self = .unsupportedSource
+            case nil: self = .requestFailed
+            }
+        }
+    }
+
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.mirror.app", category: "Playback")
+    private var entries: [String] = []
+    private var reference = PlaybackDiagnosticReference()
+    private var offline = false
+
+    func begin(offline: Bool) {
+        self.offline = offline
+        reference = PlaybackDiagnosticReference()
+        record(.opening)
+    }
+
+    func associate(_ reference: PlaybackDiagnosticReference?) {
+        if let reference { self.reference = reference }
+    }
+
+    func record(_ event: Event, since start: ContinuousClock.Instant? = nil,
+                reason: Reason? = nil, downloadActive: Bool? = nil) {
+        var fields = [event.rawValue, offline ? "source=offline" : "source=stream"]
+        if let start {
+            let elapsed = start.duration(to: .now).components
+            fields.append("ms=\(elapsed.seconds * 1_000 + elapsed.attoseconds / 1_000_000_000_000_000)")
+        }
+        if let reason { fields.append("reason=\(reason.rawValue)") }
+        if let downloadActive { fields.append("download_active=\(downloadActive)") }
+        if let status = reference.status { fields.append("http_status=\(status)") }
+        if let requestID = reference.requestID { fields.append("request_id=\(requestID)") }
+        if let playbackID = reference.playbackID { fields.append("playback_id=\(playbackID.uuidString.lowercased())") }
+        let message = fields.joined(separator: " ")
+        if reason != nil {
+            Self.log.warning("\(message, privacy: .public)")
+        } else {
+            Self.log.info("\(message, privacy: .public)")
+        }
+        entries.append("\(Date.now.ISO8601Format()) \(message)")
+        if entries.count > 24 { entries.removeFirst() }
+    }
+
+    var report: String {
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        #if os(macOS)
+        let platform = "macOS"
+        #else
+        let platform = "iOS"
+        #endif
+        return (["Mirror playback diagnostics", "Platform: \(platform) · Build: \(build)"] + entries)
+            .joined(separator: "\n")
+    }
 }
 
 @MainActor
@@ -23,6 +124,7 @@ final class PlaybackService {
 
     private var active: (URL, String)?
     private var generation = UUID()
+    private(set) var diagnosticReference = PlaybackDiagnosticReference()
 
     func open(hash: String) async throws -> URL {
         close()
@@ -44,6 +146,13 @@ final class PlaybackService {
             throw Failure.serviceUnavailable
         }
         guard let response = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        if requestGeneration == generation, !Task.isCancelled {
+            let requestID = response.value(forHTTPHeaderField: "X-Request-ID")
+            diagnosticReference = PlaybackDiagnosticReference(
+                requestID: requestID,
+                status: response.statusCode
+            )
+        }
         switch response.statusCode {
         case 201: break
         case 503: throw Failure.busy
@@ -57,6 +166,7 @@ final class PlaybackService {
             throw CancellationError()
         }
         active = (base, session.id)
+        diagnosticReference.playbackID = session.diagnosticID.flatMap(UUID.init(uuidString:))
         guard let url = URL(string: session.path, relativeTo: base), url.host == base.host else { throw URLError(.badServerResponse) }
         return url.absoluteURL
     }
@@ -143,6 +253,7 @@ final class PlaybackService {
 
     func close() {
         generation = UUID()
+        diagnosticReference = PlaybackDiagnosticReference()
         if let (base, id) = active { release(base: base, id: id) }
         active = nil
     }

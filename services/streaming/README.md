@@ -189,3 +189,54 @@ clip, and releases the torrent before moving on. Unavailable titles are retried
 on the next run. An overlapping cron invocation skips starting a second worker.
 Each clip is capped at 2 MiB. The worker prunes clips outside the active Home
 snapshots on the next run.
+
+### Playback diagnostics
+
+The streaming API, preview API and refresh job write schema-versioned JSON
+events to stdout. Request events use normalized route names and millisecond
+durations. Session events carry an opaque `playback_id`, returned to clients as
+`diagnostic_id` in the session-create response. The ID is for log correlation
+and grants no access to media. Use `request_id` to follow a request across
+workers and `playback_id` to follow related requests on the owning worker.
+The preview refresh events share a `run_id`.
+
+`MIRROR_LOG_SAMPLE_RATE` controls routine preview lookups and fast media reads
+(default `0.05`, range `0`–`1`). The first media read, slow media responses,
+capacity errors and upstream failures are kept. Successful health probes are
+omitted. Use `0` on constrained hosts to keep only the unsampled events.
+
+For nginx, include `nginx-diagnostics.conf` in the HTTP context and set
+`access_log /var/log/nginx/mirror-diagnostics.log mirror_diagnostics if=$mirror_log_request;`
+in each Mirror HTTPS server in place of its general-purpose access log.
+Add `proxy_set_header X-Request-ID $request_id;` to each public-facing proxy
+location. If one ingress proxies internally to another edge, preserve the
+generated ID on a listener reachable only by the trusted ingress. Enable
+`MIRROR_TRUST_EDGE_REQUEST_ID=true` only on APIs reachable exclusively through
+that trusted ingress or private peers. Otherwise the APIs generate their own
+request IDs. Before collecting ingress logs, verify that local access and error
+logs containing unfiltered request paths are excluded from collection.
+
+#### OCI Logging pilot
+
+The Hyderabad pilot publishes to `mirror-streaming-production` /
+`mirror-playback-diagnostics` in OCI Logging with 30-day retention. The
+pilot worker's `mirror-log-collector.timer` runs once a minute. It uses the
+existing preview image for the OCI SDK and the worker's instance principal
+with push-only permission scoped to the dedicated log group. Its uploader
+accepts only structured Mirror events and allowlisted fields. The cursor
+advances after a successful upload. The collector reads at most 600 recent
+lines per source and caps recovery backlog at 30 minutes to bound VM work.
+
+In OCI Logging Search, select the Mirror log and append
+`| where data.playback_id = '<ID from Copy Playback Diagnostics>'` for the
+session. Use `data.request_id` to locate ingress and worker records for one
+request. The saved searches are `mirror-playback-timeline`,
+`mirror-playback-failures`, `mirror-preview-refreshes`, and
+`mirror-collector-health`.
+
+Check `systemctl list-timers mirror-log-collector.timer` and
+`journalctl -u mirror-log-collector.service` on the pilot VM if checkpoints
+stop arriving. To pause collection, disable the timer and stop its service.
+To revert the pilot ingress format, restore `/etc/mirror-edge/tls.conf.before-diagnostics`,
+remove `/etc/mirror-edge/00-mirror-diagnostics.conf`, and validate the nginx
+configuration before reloading.
